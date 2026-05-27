@@ -1,0 +1,15 @@
+# Добавить в /etc/caddy/Caddyfile на VPS после выбора домена.
+# Caddy сам поднимет HTTPS через Let's Encrypt.
+
+svadba.example.com {
+    reverse_proxy 127.0.0.1:3012
+    encode gzip zstd
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer-when-downgrade"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+}

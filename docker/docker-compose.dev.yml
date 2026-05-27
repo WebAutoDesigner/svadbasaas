@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: svadba_pg_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: svadba
+      POSTGRES_PASSWORD: svadba_dev_pw
+      POSTGRES_DB: svadba_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - svadba_pg_data:/var/lib/postgresql/data
+
+volumes:
+  svadba_pg_data:

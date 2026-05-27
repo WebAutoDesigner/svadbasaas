@@ -1,0 +1,33 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: svadba-plus:latest
+    container_name: svadba_app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3012:3000"
+    volumes:
+      - /data/svadba-uploads:/app/uploads
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: svadba_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - svadba_pg_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+
+volumes:
+  svadba_pg_data:
