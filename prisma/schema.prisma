@@ -6,8 +6,151 @@ datasource db {
   provider = "postgresql"
 }
 
-// Заглушка для проверки соединения — будет расширена в Phase 2
-model HealthCheck {
-  id        Int      @id @default(autoincrement())
+// =============================================================================
+// Super-admin (владелец продукта) — отдельная сущность с собственной auth.
+// Не использует Better-Auth — простой email/password.
+// =============================================================================
+
+model SuperAdmin {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime            @default(now())
+  sessions     SuperAdminSession[]
+}
+
+model SuperAdminSession {
+  id           String     @id @default(cuid())
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+
+  @@index([expiresAt])
+}
+
+// =============================================================================
+// Better-Auth core tables (user/session/account/verification)
+// Для agency-пользователей. Поля соответствуют Better-Auth дефолтному адаптеру.
+// =============================================================================
+
+model User {
+  id            String   @id
+  email         String   @unique
+  name          String
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  memberships AgencyMember[]
+  auditLogs   AuditLog[]
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  // Активное агентство для multi-tenant изоляции (если у user несколько membership)
+  activeAgencyId String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
+// =============================================================================
+// Tenant: Agency + members + roles
+// =============================================================================
+
+enum Role {
+  OWNER
+  ADMIN
+  COORDINATOR
+}
+
+model Agency {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   AgencyMember[]
+  auditLogs AuditLog[]
+
+  @@index([isActive])
+}
+
+model AgencyMember {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @default(OWNER)
+  createdAt DateTime @default(now())
+
+  @@unique([agencyId, userId])
+  @@index([userId])
+}
+
+// =============================================================================
+// Audit log — все мутирующие действия (создание/удаление/изменение прав)
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  agencyId   String?
+  agency     Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String?
+  targetId   String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([action, createdAt])
 }
