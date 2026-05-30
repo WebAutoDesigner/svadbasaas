@@ -13,9 +13,25 @@ export default async function AppLayout({
     <div className="min-h-screen flex flex-col">
       <header className="border-b">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <Link href="/app" className="font-semibold truncate">
-            {ctx.agencyName}
-          </Link>
+          <div className="flex items-center gap-4 min-w-0">
+            <Link href="/app" className="font-semibold truncate">
+              {ctx.agencyName}
+            </Link>
+            <nav className="flex items-center gap-3 text-sm">
+              <Link
+                href="/app"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Дашборд
+              </Link>
+              <Link
+                href="/app/team"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Команда
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground hidden md:inline">
               {ctx.role}
