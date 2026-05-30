@@ -44,10 +44,11 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions    Session[]
-  accounts    Account[]
-  memberships AgencyMember[]
-  auditLogs   AuditLog[]
+  sessions             Session[]
+  accounts             Account[]
+  memberships          AgencyMember[]
+  auditLogs            AuditLog[]
+  coordinatedWeddings  Wedding[]      @relation("WeddingCoordinator")
 }
 
 model Session {
@@ -118,6 +119,7 @@ model Agency {
 
   members   AgencyMember[]
   auditLogs AuditLog[]
+  weddings  Wedding[]
 
   @@index([isActive])
 }
@@ -153,4 +155,36 @@ model AuditLog {
 
   @@index([agencyId, createdAt])
   @@index([action, createdAt])
+}
+
+// =============================================================================
+// Wedding — основная сущность (проект свадьбы)
+// =============================================================================
+
+enum WeddingStatus {
+  PLANNING
+  COMPLETED
+  CANCELLED
+}
+
+model Wedding {
+  id            String        @id @default(cuid())
+  agencyId      String
+  agency        Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  brideName     String
+  groomName     String
+  date          DateTime // дата свадьбы (UTC, дата без точного времени — время дня в Phase 9)
+  timezone      String        @default("Europe/Moscow")
+  budget        Int           @default(0) // плановый бюджет, рубли
+  location      String?
+  guestCount    Int?
+  coordinatorId String?
+  coordinator   User?         @relation("WeddingCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+  status        WeddingStatus @default(PLANNING)
+  deletedAt     DateTime? // soft delete
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([agencyId, deletedAt])
+  @@index([agencyId, date])
 }

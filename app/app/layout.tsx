@@ -19,10 +19,10 @@ export default async function AppLayout({
             </Link>
             <nav className="flex items-center gap-3 text-sm">
               <Link
-                href="/app"
+                href="/app/weddings"
                 className="text-muted-foreground hover:text-foreground"
               >
-                Дашборд
+                Свадьбы
               </Link>
               <Link
                 href="/app/team"
