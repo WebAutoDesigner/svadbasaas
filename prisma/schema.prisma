@@ -185,6 +185,36 @@ model Wedding {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  checklistItems ChecklistItem[]
+
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
+}
+
+// =============================================================================
+// Чек-лист подготовки — плоский список задач, сгруппированный по периодам
+// =============================================================================
+
+enum ChecklistPeriod {
+  SIX_MONTHS
+  THREE_MONTHS
+  ONE_MONTH
+  ONE_WEEK
+  ONE_DAY
+  AFTER
+}
+
+model ChecklistItem {
+  id        String          @id @default(cuid())
+  weddingId String
+  wedding   Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title     String
+  period    ChecklistPeriod
+  done      Boolean         @default(false)
+  note      String?
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([weddingId])
 }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAgencyContext } from "@/lib/tenant";
 import { getWedding } from "@/lib/wedding/wedding";
 import { listMembers } from "@/lib/agency/team";
+import { checklistProgress } from "@/lib/wedding/checklist";
 import { formatWeddingDate, daysUntil, toDateInputValue } from "@/lib/dates";
 import { OverviewEditor } from "./overview-editor";
 
@@ -24,6 +25,7 @@ export default async function WeddingOverviewPage({
   if (!wedding) notFound();
 
   const members = await listMembers(ctx.agencyId);
+  const progress = await checklistProgress(ctx.agencyId, id);
   const days = daysUntil(wedding.date);
 
   return (
@@ -44,7 +46,14 @@ export default async function WeddingOverviewPage({
           label="Бюджет"
           value={`${wedding.budget.toLocaleString("ru-RU")} ₽`}
         />
-        <Stat label="Гостей" value={wedding.guestCount?.toString() ?? "—"} />
+        <Stat
+          label="Готовность"
+          value={
+            progress.total === 0
+              ? "—"
+              : `${progress.percent}% (${progress.done}/${progress.total})`
+          }
+        />
       </div>
 
       <div className="text-sm text-muted-foreground space-y-1">
