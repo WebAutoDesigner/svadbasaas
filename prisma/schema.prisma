@@ -186,6 +186,7 @@ model Wedding {
   updatedAt     DateTime      @updatedAt
 
   checklistItems ChecklistItem[]
+  budgetItems    BudgetItem[]
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -215,6 +216,24 @@ model ChecklistItem {
   sortOrder Int             @default(0)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+
+  @@index([weddingId])
+}
+
+// =============================================================================
+// Бюджет — статьи расходов план/факт
+// =============================================================================
+
+model BudgetItem {
+  id        String   @id @default(cuid())
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name      String
+  planned   Int      @default(0) // план, рубли
+  actual    Int      @default(0) // факт, рубли
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([weddingId])
 }

@@ -1,19 +1,8 @@
 import { db } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
 import { getTemplate } from "@/lib/templates/checklist";
+import { assertWedding } from "@/lib/wedding/guard";
 import type { ChecklistPeriod } from "@prisma/client";
-
-/** Проверяет, что свадьба принадлежит агентству (tenant guard для дочерних сущностей) */
-async function assertWedding(
-  agencyId: string,
-  weddingId: string,
-): Promise<boolean> {
-  const w = await db.wedding.findFirst({
-    where: { id: weddingId, agencyId, deletedAt: null },
-    select: { id: true },
-  });
-  return Boolean(w);
-}
 
 export async function listChecklist(agencyId: string, weddingId: string) {
   if (!(await assertWedding(agencyId, weddingId))) return [];
