@@ -187,6 +187,7 @@ model Wedding {
 
   checklistItems ChecklistItem[]
   budgetItems    BudgetItem[]
+  vendors        Vendor[]
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -234,6 +235,33 @@ model BudgetItem {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+// =============================================================================
+// Подрядчики свадьбы
+// =============================================================================
+
+enum PaymentStatus {
+  NOT_PAID
+  PARTIAL
+  PAID
+}
+
+model Vendor {
+  id            String        @id @default(cuid())
+  weddingId     String
+  wedding       Wedding       @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name          String
+  service       String // тип услуги: ведущий, фото и т.д.
+  contact       String? // телефон/мессенджер/email одной строкой
+  amount        Int           @default(0) // стоимость, рубли
+  paymentStatus PaymentStatus @default(NOT_PAID)
+  note          String?
+  sortOrder     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([weddingId])
 }
