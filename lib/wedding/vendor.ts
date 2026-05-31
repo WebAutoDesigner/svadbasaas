@@ -3,12 +3,6 @@ import { err, ok, type Result } from "@/lib/result";
 import { assertWedding } from "@/lib/wedding/guard";
 import type { PaymentStatus } from "@prisma/client";
 
-export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
-  NOT_PAID: "Не оплачен",
-  PARTIAL: "Частично",
-  PAID: "Оплачен",
-};
-
 export type VendorData = {
   name: string;
   service: string;

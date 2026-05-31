@@ -3,8 +3,10 @@ import { requireAgencyContext } from "@/lib/tenant";
 import { getWedding } from "@/lib/wedding/wedding";
 import { listMembers } from "@/lib/agency/team";
 import { checklistProgress } from "@/lib/wedding/checklist";
+import { getCoupleAccessForWedding } from "@/lib/couple/auth";
 import { formatWeddingDate, daysUntil, toDateInputValue } from "@/lib/dates";
 import { OverviewEditor } from "./overview-editor";
+import { InviteCouple } from "./invite-couple";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,7 @@ export default async function WeddingOverviewPage({
 
   const members = await listMembers(ctx.agencyId);
   const progress = await checklistProgress(ctx.agencyId, id);
+  const coupleAccess = await getCoupleAccessForWedding(id);
   const days = daysUntil(wedding.date);
 
   return (
@@ -79,6 +82,11 @@ export default async function WeddingOverviewPage({
         }}
         coordinators={members.map((m) => ({ id: m.userId, name: m.name }))}
       />
+
+      <div className="pt-2 border-t">
+        <h2 className="font-semibold mb-2">Кабинет молодожёнов</h2>
+        <InviteCouple weddingId={wedding.id} currentEmail={coupleAccess?.email ?? null} />
+      </div>
     </div>
   );
 }
