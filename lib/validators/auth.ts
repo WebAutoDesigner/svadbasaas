@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-export const emailSchema = z.string().email("Некорректный email").max(255);
+// Нормализуем email: trim + lowercase. Так сторона агентства совпадает со
+// стороной пары (та уже lowercase-ит) и Better-Auth-логин не ломается на
+// заглавных буквах, а User.email @unique не плодит дубли в разном регистре.
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Некорректный email")
+  .max(255);
 
 export const passwordSchema = z
   .string()

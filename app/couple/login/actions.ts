@@ -39,11 +39,17 @@ export async function requestCodeAction(
   const res = await requestLoginCode(parsed.data);
   // Не раскрываем существует ли доступ (anti-enumeration): всегда "отправлено"
   if (res.ok) {
-    await sendMail({
-      to: parsed.data,
-      subject: "Код входа в кабинет — Svadba Plus",
-      text: `Ваш код для входа: ${res.data.code}\nКод действителен 15 минут.`,
-    });
+    try {
+      await sendMail({
+        to: parsed.data,
+        subject: "Код входа в кабинет — Svadba Plus",
+        text: `Ваш код для входа: ${res.data.code}\nКод действителен 15 минут.`,
+      });
+    } catch (e) {
+      // SMTP-сбой не должен ни ронять запрос (500), ни выдавать через разницу
+      // ответов, что доступ существует. Логируем и отвечаем как обычно.
+      console.error("[couple-login] sendMail failed", e);
+    }
     return {
       sent: true,
       ...(isEmailDevMode ? { devCode: res.data.code } : {}),

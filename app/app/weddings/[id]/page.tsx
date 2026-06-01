@@ -26,9 +26,12 @@ export default async function WeddingOverviewPage({
   const wedding = await getWedding(ctx.agencyId, id);
   if (!wedding) notFound();
 
-  const members = await listMembers(ctx.agencyId);
-  const progress = await checklistProgress(ctx.agencyId, id);
-  const coupleAccess = await getCoupleAccessForWedding(id);
+  // Три независимых запроса — параллельно, а не друг за другом (быстрее на латентность).
+  const [members, progress, coupleAccess] = await Promise.all([
+    listMembers(ctx.agencyId),
+    checklistProgress(ctx.agencyId, id),
+    getCoupleAccessForWedding(id),
+  ]);
   const days = daysUntil(wedding.date);
 
   return (

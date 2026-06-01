@@ -12,8 +12,11 @@ const UPLOAD_DIR = process.env["UPLOAD_DIR"] ?? path.join(process.cwd(), "upload
 
 function resolveKey(key: string): string {
   // Защита от path traversal: ключ не должен выходить за UPLOAD_DIR
-  const full = path.resolve(UPLOAD_DIR, key);
-  if (!full.startsWith(path.resolve(UPLOAD_DIR))) {
+  const base = path.resolve(UPLOAD_DIR);
+  const full = path.resolve(base, key);
+  // Сравниваем с разделителем на конце, иначе "/uploads-evil" прошёл бы
+  // префиксную проверку "/uploads".
+  if (full !== base && !full.startsWith(base + path.sep)) {
     throw new Error("Invalid storage key");
   }
   return full;

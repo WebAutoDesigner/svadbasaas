@@ -112,9 +112,18 @@ export async function removeMember(
     if (ownerCount <= 1) return err("LAST_OWNER");
   }
 
-  // Удаляем membership. User+Account остаются (могут быть в других агентствах);
-  // для MVP с глобально-уникальным email это просто «осиротевший» user, но он
-  // не сможет войти без membership (tenant guard редиректит).
-  await db.agencyMember.delete({ where: { id: memberId } });
+  // Удаляем membership. Если у user не осталось других membership — удаляем и
+  // самого user (cascade чистит Account/Session; AuditLog.userId и
+  // Wedding.coordinatorId — SetNull). Иначе осиротевший User.email @unique
+  // навсегда блокировал бы повторное добавление того же email (EMAIL_TAKEN).
+  await db.$transaction(async (tx) => {
+    await tx.agencyMember.delete({ where: { id: memberId } });
+    const remaining = await tx.agencyMember.count({
+      where: { userId: member.userId },
+    });
+    if (remaining === 0) {
+      await tx.user.delete({ where: { id: member.userId } });
+    }
+  });
   return ok({ userId: member.userId });
 }

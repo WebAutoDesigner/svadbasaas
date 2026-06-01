@@ -41,7 +41,7 @@ export default async function SuperAdminLayout({
                   href="/super-admin/audit"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  Audit
+                  Аудит
                 </Link>
               </nav>
             ) : null}

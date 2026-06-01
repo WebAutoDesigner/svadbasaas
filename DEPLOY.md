@@ -95,6 +95,38 @@ crontab -e
 5. На свадьбе «Пригласить пару» → email.
 6. `https://домен/couple/login` → ввести email → код (придёт письмом) → проверить ЛК пары.
 
+## Ограниченная роль БД для RLS (ОБЯЗАТЕЛЬНО)
+
+Изоляция агентств защищена на двух уровнях: код (`withAgency`/`assertWedding` +
+тесты) И Postgres RLS (миграция `rls_tenant_isolation`). RLS срабатывает только
+если приложение ходит под **не-superuser** ролью (владелец/superuser обходит RLS).
+Поэтому рантайм использует отдельную ограниченную роль, а миграции/seed —
+владельца.
+
+Создать роль один раз (под владельцем БД):
+
+```bash
+docker exec -i svadba_pg psql -U svadba -d svadba <<'SQL'
+CREATE ROLE svadba_app LOGIN PASSWORD 'СИЛЬНЫЙ_ПАРОЛЬ' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+GRANT USAGE ON SCHEMA public TO svadba_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO svadba_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO svadba_app;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO svadba_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE svadba IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO svadba_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE svadba IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO svadba_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE svadba IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO svadba_app;
+SQL
+```
+
+В `.env`:
+- `DATABASE_URL` — владелец (для `prisma migrate deploy` / seed).
+- `APP_DATABASE_URL` — `postgresql://svadba_app:СИЛЬНЫЙ_ПАРОЛЬ@127.0.0.1:5434/svadba` (рантайм приложения; lib/db.ts берёт его в приоритете).
+
+⚠️ ВАЖНО: после КАЖДОЙ будущей миграции, добавляющей таблицу, выдать на неё права
+svadba_app (ALTER DEFAULT PRIVILEGES покрывает таблицы, созданные владельцем —
+обычно достаточно, но проверяй). Если APP_DATABASE_URL не задать — приложение
+работает, но RLS-страховка НЕ активна (останется только защита на уровне кода).
+
 ## Обновление версии
 
 ```bash

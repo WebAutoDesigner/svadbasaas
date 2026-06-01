@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAgencyContext } from "@/lib/tenant";
+import { ROLE_LABELS } from "@/lib/auth/can";
 import { LogoutButton } from "./logout-button";
 
 export default async function AppLayout({
@@ -34,7 +35,7 @@ export default async function AppLayout({
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground hidden md:inline">
-              {ctx.role}
+              {ROLE_LABELS[ctx.role]}
             </span>
             <LogoutButton />
           </div>

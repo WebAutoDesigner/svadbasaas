@@ -9,6 +9,11 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
     css: false,
+    // Интеграционные тесты бьют реальную БД и реальный bcrypt (cost 12).
+    // Дефолтные 5с малы, когда несколько bcrypt-операций идут под параллельной
+    // нагрузкой воркеров — поднимаем, чтобы не было ложных таймаут-флак.
+    testTimeout: 20000,
+    hookTimeout: 20000,
   },
   resolve: {
     alias: {

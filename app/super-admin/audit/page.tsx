@@ -4,7 +4,7 @@ import { requireSuperAdmin } from "@/lib/super-admin/session";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Audit log · Супер-админ · Svadba Plus",
+  title: "Аудит · Супер-админ · Svadba Plus",
 };
 
 export default async function AuditLogPage() {
@@ -18,7 +18,7 @@ export default async function AuditLogPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-5xl space-y-4">
-      <h1 className="text-2xl font-bold">Audit log (последние 100)</h1>
+      <h1 className="text-2xl font-bold">Аудит (последние 100)</h1>
       <div className="border rounded-md divide-y text-sm">
         {logs.length === 0 ? (
           <p className="p-4 text-muted-foreground">Записей нет.</p>

@@ -3,7 +3,7 @@ import { randomInt, randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
 
-const BCRYPT_COST = 10;
+const BCRYPT_COST = 12; // по политике AGENTS.md (≥12), как в остальных хэшах
 const CODE_TTL_MS = 15 * 60 * 1000; // 15 минут
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 дней
 const MAX_TRIES = 5;

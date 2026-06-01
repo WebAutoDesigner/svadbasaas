@@ -47,7 +47,6 @@ model User {
   sessions             Session[]
   accounts             Account[]
   memberships          AgencyMember[]
-  auditLogs            AuditLog[]
   coordinatedWeddings  Wedding[]      @relation("WeddingCoordinator")
 }
 
@@ -145,8 +144,10 @@ model AuditLog {
   id         String   @id @default(cuid())
   agencyId   String?
   agency     Agency?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  // userId — свободный идентификатор актора (User.id ИЛИ SuperAdmin.id), без FK.
+  // Audit-лог иммутабелен: не должен ломаться FK при действиях супер-админа и не
+  // должен терять автора при удалении юзера. Тип актора виден по префиксу action.
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action     String
   targetType String?
   targetId   String?

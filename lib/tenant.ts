@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, runWithDb, type DbClient } from "@/lib/db";
 import type { Role } from "@prisma/client";
 
 export type AgencyContext = {
@@ -9,7 +9,7 @@ export type AgencyContext = {
   agencyId: string;
   agencyName: string;
   role: Role;
-  db: typeof db;
+  db: DbClient;
 };
 
 /**
@@ -50,12 +50,19 @@ export async function requireAgencyContext(): Promise<AgencyContext> {
 }
 
 /**
- * Helper: оборачивает функцию, которая ОБЯЗАНА работать в контексте агентства.
- * Все запросы внутри должны фильтроваться по agencyId — иначе утечка данных.
+ * Helper: выполняет fn в контексте агентства внутри транзакции, где в сессии
+ * Postgres выставлен app.agency_id. На этой транзакции срабатывает RLS —
+ * страховка: даже если запрос в слое данных забыл WHERE agencyId, БД вернёт
+ * только строки этого агентства. Слой данных ходит через getDb(), который внутри
+ * этой транзакции отдаёт tx-клиент (см. lib/db.ts).
  */
 export async function withAgency<T>(
   fn: (ctx: AgencyContext) => Promise<T>
 ): Promise<T> {
   const ctx = await requireAgencyContext();
-  return fn(ctx);
+  return db.$transaction(async (tx) => {
+    // set_config(..., true) = LOCAL: действует только до конца транзакции.
+    await tx.$executeRaw`SELECT set_config('app.agency_id', ${ctx.agencyId}, true)`;
+    return runWithDb(tx, () => fn({ ...ctx, db: tx }));
+  });
 }
