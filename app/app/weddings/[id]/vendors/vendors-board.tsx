@@ -23,6 +23,12 @@ type Vendor = {
   note: string | null;
 };
 type Summary = { total: number; paid: number; count: number };
+type DirectoryVendor = {
+  id: string;
+  name: string;
+  service: string;
+  contact: string | null;
+};
 
 const fmt = (n: number) => n.toLocaleString("ru-RU");
 const STATUSES: PaymentStatus[] = ["NOT_PAID", "PARTIAL", "PAID"];
@@ -36,10 +42,12 @@ export function VendorsBoard({
   weddingId,
   vendors,
   summary,
+  directory,
 }: {
   weddingId: string;
   vendors: Vendor[];
   summary: Summary;
+  directory: DirectoryVendor[];
 }) {
   const [adding, setAdding] = useState(false);
 
@@ -62,6 +70,7 @@ export function VendorsBoard({
           weddingId={weddingId}
           onDone={() => setAdding(false)}
           mode="create"
+          directory={directory}
         />
       ) : null}
 
@@ -154,13 +163,28 @@ function VendorForm({
   vendor,
   mode,
   onDone,
+  directory,
 }: {
   weddingId: string;
   vendor?: Vendor;
   mode: "create" | "edit";
   onDone: () => void;
+  directory?: DirectoryVendor[];
 }) {
   const [pending, start] = useTransition();
+  const [prefill, setPrefill] = useState<{
+    name: string;
+    service: string;
+    contact: string;
+  } | null>(null);
+  // Значения по умолчанию: выбранное из базы → редактируемый подрядчик → пусто.
+  const def = {
+    name: prefill?.name ?? vendor?.name ?? "",
+    service: prefill?.service ?? vendor?.service ?? "",
+    contact: prefill?.contact ?? vendor?.contact ?? "",
+  };
+  // Ключ форсит ремоунт uncontrolled-полей при выборе из базы.
+  const fieldsKey = prefill ? `pf-${prefill.name}-${prefill.service}` : "base";
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -191,12 +215,40 @@ function VendorForm({
       onSubmit={handleSubmit}
       className="border rounded-md p-4 space-y-3 bg-muted/20"
     >
+      {directory && directory.length > 0 ? (
+        <div className="space-y-1">
+          <Label htmlFor="fromDirectory">Выбрать из базы</Label>
+          <select
+            id="fromDirectory"
+            defaultValue=""
+            disabled={pending}
+            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            onChange={(e) => {
+              const d = directory.find((x) => x.id === e.target.value);
+              if (d)
+                setPrefill({
+                  name: d.name,
+                  service: d.service,
+                  contact: d.contact ?? "",
+                });
+            }}
+          >
+            <option value="">— не из базы —</option>
+            {directory.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} · {d.service}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+      <div key={fieldsKey} className="contents">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Field name="name" label="Название" def={vendor?.name} disabled={pending} />
+        <Field name="name" label="Название" def={def.name} disabled={pending} />
         <Field
           name="service"
           label="Услуга"
-          def={vendor?.service}
+          def={def.service}
           disabled={pending}
         />
       </div>
@@ -204,7 +256,7 @@ function VendorForm({
         <Field
           name="contact"
           label="Контакт"
-          def={vendor?.contact ?? ""}
+          def={def.contact}
           required={false}
           disabled={pending}
         />
@@ -240,6 +292,7 @@ function VendorForm({
         required={false}
         disabled={pending}
       />
+      </div>
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
           {pending ? "Сохраняем…" : "Сохранить"}

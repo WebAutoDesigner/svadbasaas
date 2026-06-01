@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAgencyContext } from "@/lib/tenant";
 import { getWedding } from "@/lib/wedding/wedding";
 import { listVendors, vendorsSummary } from "@/lib/wedding/vendor";
+import { listAgencyVendors } from "@/lib/agency/vendor-directory";
 import { VendorsBoard } from "./vendors-board";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,10 @@ export default async function VendorsPage({
   const wedding = await getWedding(ctx.agencyId, id);
   if (!wedding) notFound();
 
-  const [vendors, summary] = await Promise.all([
+  const [vendors, summary, directory] = await Promise.all([
     listVendors(ctx.agencyId, id),
     vendorsSummary(ctx.agencyId, id),
+    listAgencyVendors(ctx.agencyId),
   ]);
 
   return (
@@ -34,6 +36,12 @@ export default async function VendorsPage({
         note: v.note,
       }))}
       summary={summary}
+      directory={directory.map((d) => ({
+        id: d.id,
+        name: d.name,
+        service: d.service,
+        contact: d.contact,
+      }))}
     />
   );
 }

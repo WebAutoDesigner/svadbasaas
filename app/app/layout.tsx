@@ -26,6 +26,12 @@ export default async function AppLayout({
                 Свадьбы
               </Link>
               <Link
+                href="/app/vendors"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Подрядчики
+              </Link>
+              <Link
                 href="/app/team"
                 className="text-muted-foreground hover:text-foreground"
               >
