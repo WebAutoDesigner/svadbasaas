@@ -65,6 +65,14 @@ export async function coupleTimeline(weddingId: string) {
   });
 }
 
+/** Расписание свадьбы для пары — только события, открытые ей агентством. */
+export async function coupleVisibleEvents(weddingId: string) {
+  return db.weddingEvent.findMany({
+    where: { weddingId, visibleToCouple: true },
+    orderBy: [{ date: "asc" }, { startMinutes: "asc" }],
+  });
+}
+
 export async function coupleDocuments(weddingId: string) {
   return db.document.findMany({
     where: { weddingId },
