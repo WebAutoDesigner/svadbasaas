@@ -12,6 +12,15 @@ export async function coupleWedding(weddingId: string) {
   });
 }
 
+/** agencyId свадьбы — нужен couple-мутациям, чтобы звать tenant-слой данных. */
+export async function coupleAgencyId(weddingId: string): Promise<string | null> {
+  const w = await db.wedding.findFirst({
+    where: { id: weddingId, deletedAt: null },
+    select: { agencyId: true },
+  });
+  return w?.agencyId ?? null;
+}
+
 export async function coupleChecklist(weddingId: string) {
   return db.checklistItem.findMany({
     where: { weddingId },
