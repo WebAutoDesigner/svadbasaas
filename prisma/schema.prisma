@@ -116,9 +116,10 @@ model Agency {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members   AgencyMember[]
-  auditLogs AuditLog[]
-  weddings  Wedding[]
+  members         AgencyMember[]
+  auditLogs       AuditLog[]
+  weddings        Wedding[]
+  vendorDirectory AgencyVendor[]
 
   @@index([isActive])
 }
@@ -186,12 +187,20 @@ model Wedding {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  checklistItems ChecklistItem[]
-  budgetItems    BudgetItem[]
-  vendors        Vendor[]
-  documents      Document[]
-  timelineEvents TimelineEvent[]
-  coupleAccess   CoupleAccess?
+  // Когда агентство последний раз просматривало правки пары (подсистема couple-activity)
+  guestsSeenByAgencyAt  DateTime?
+  seatingSeenByAgencyAt DateTime?
+
+  checklistItems   ChecklistItem[]
+  budgetItems      BudgetItem[]
+  vendors          Vendor[]
+  documents        Document[]
+  timelineEvents   TimelineEvent[]
+  coupleAccess     CoupleAccess?
+  guests           Guest[]
+  seatingTables    SeatingTable[]
+  coupleActivities CoupleActivity[]
+  events           WeddingEvent[]
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -336,4 +345,115 @@ model CoupleSession {
   createdAt      DateTime     @default(now())
 
   @@index([expiresAt])
+}
+
+// =============================================================================
+// Гости свадьбы + статус RSVP (проставляется вручную). Каждый человек — строка.
+// =============================================================================
+
+enum GuestStatus {
+  COMING
+  NOT_COMING
+  MAYBE
+  NO_ANSWER
+}
+
+enum GuestSide {
+  BRIDE
+  GROOM
+  COMMON
+}
+
+model Guest {
+  id         String        @id @default(cuid())
+  weddingId  String
+  wedding    Wedding       @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name       String
+  status     GuestStatus   @default(NO_ANSWER)
+  side       GuestSide?
+  groupLabel String?
+  tableId    String?
+  table      SeatingTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  sortOrder  Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([weddingId])
+  @@index([tableId])
+}
+
+// =============================================================================
+// Рассадка — столы (привязка гостя к столу через Guest.tableId)
+// =============================================================================
+
+model SeatingTable {
+  id        String   @id @default(cuid())
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name      String
+  capacity  Int      @default(0)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  guests    Guest[]
+
+  @@index([weddingId])
+}
+
+// =============================================================================
+// Couple-activity — лог правок пары для бейджа «пара внесла изменения»
+// =============================================================================
+
+enum CoupleArea {
+  GUESTS
+  SEATING
+}
+
+model CoupleActivity {
+  id        String     @id @default(cuid())
+  weddingId String
+  wedding   Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  area      CoupleArea
+  summary   String
+  createdAt DateTime   @default(now())
+
+  @@index([weddingId, area, createdAt])
+}
+
+// =============================================================================
+// База подрядчиков агентства (справочник, скоуп по agencyId, не per-wedding)
+// =============================================================================
+
+model AgencyVendor {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name      String
+  service   String
+  contact   String?
+  link      String?
+  priceNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+// =============================================================================
+// События свадьбы — вехи с датами (роспись, банкет…), опционально видны паре
+// =============================================================================
+
+model WeddingEvent {
+  id              String   @id @default(cuid())
+  weddingId       String
+  wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title           String
+  date            DateTime
+  startMinutes    Int?
+  description     String?
+  visibleToCouple Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([weddingId, date])
 }
