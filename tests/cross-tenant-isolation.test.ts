@@ -16,6 +16,26 @@ import {
 } from "@/lib/wedding/budget";
 import { addVendor, deleteVendor, listVendors, updateVendor } from "@/lib/wedding/vendor";
 import { addEvent, deleteEvent, listTimeline, updateEvent } from "@/lib/wedding/timeline";
+import { addGuest, deleteGuest, listGuests, setGuestStatus, updateGuest } from "@/lib/wedding/guest";
+import {
+  addTable,
+  assignGuestToTable,
+  deleteTable,
+  listTables,
+  unassignGuest,
+} from "@/lib/wedding/seating";
+import {
+  addEvent as addWEvent,
+  deleteEvent as deleteWEvent,
+  listEvents as listWEvents,
+  updateEvent as updateWEvent,
+} from "@/lib/wedding/event";
+import {
+  addAgencyVendor,
+  deleteAgencyVendor,
+  listAgencyVendors,
+  updateAgencyVendor,
+} from "@/lib/agency/vendor-directory";
 
 /**
  * «Робот-проверяльщик» изоляции арендаторов: для каждого раздела свадьбы
@@ -29,10 +49,14 @@ const PREFIX = "xtenant-test-";
 
 async function cleanup() {
   const childWhere = { wedding: { agency: { name: { startsWith: PREFIX } } } };
+  await db.guest.deleteMany({ where: childWhere });
+  await db.seatingTable.deleteMany({ where: childWhere });
+  await db.weddingEvent.deleteMany({ where: childWhere });
   await db.checklistItem.deleteMany({ where: childWhere });
   await db.budgetItem.deleteMany({ where: childWhere });
   await db.vendor.deleteMany({ where: childWhere });
   await db.timelineEvent.deleteMany({ where: childWhere });
+  await db.agencyVendor.deleteMany({ where: { agency: { name: { startsWith: PREFIX } } } });
   await db.wedding.deleteMany({ where: { agency: { name: { startsWith: PREFIX } } } });
   await db.agencyMember.deleteMany({ where: { user: { email: { startsWith: PREFIX } } } });
   await db.account.deleteMany({ where: { user: { email: { startsWith: PREFIX } } } });
@@ -160,5 +184,66 @@ describe("cross-tenant isolation: agency B cannot touch agency A's data", () => 
     expect((await deleteEvent(b.agencyId, b.weddingId, added.data.id)).ok).toBe(false);
 
     expect(await listTimeline(a.agencyId, a.weddingId)).toHaveLength(1);
+  });
+
+  it("guests: B cannot add to, list, update, set status or delete A's guests", async () => {
+    const added = await addGuest(a.agencyId, a.weddingId, {
+      name: "Иван",
+      status: "COMING",
+    });
+    if (!added.ok) throw new Error("setup add failed");
+
+    expect((await addGuest(b.agencyId, a.weddingId, { name: "x", status: "COMING" })).ok).toBe(false);
+    expect(await listGuests(b.agencyId, a.weddingId)).toEqual([]);
+    expect((await updateGuest(b.agencyId, a.weddingId, added.data.id, { name: "z", status: "NOT_COMING" })).ok).toBe(false);
+    expect((await setGuestStatus(b.agencyId, b.weddingId, added.data.id, "NOT_COMING")).ok).toBe(false);
+    expect((await deleteGuest(b.agencyId, b.weddingId, added.data.id)).ok).toBe(false);
+
+    const aGuests = await listGuests(a.agencyId, a.weddingId);
+    expect(aGuests).toHaveLength(1);
+    expect(aGuests[0]?.status).toBe("COMING");
+  });
+
+  it("seating: B cannot create tables or assign A's guests", async () => {
+    const table = await addTable(a.agencyId, a.weddingId, { name: "Стол 1", capacity: 8 });
+    const guest = await addGuest(a.agencyId, a.weddingId, { name: "Иван", status: "COMING" });
+    if (!table.ok || !guest.ok) throw new Error("setup failed");
+
+    expect((await addTable(b.agencyId, a.weddingId, { name: "x", capacity: 1 })).ok).toBe(false);
+    expect(await listTables(b.agencyId, a.weddingId)).toEqual([]);
+    expect((await assignGuestToTable(b.agencyId, a.weddingId, guest.data.id, table.data.id)).ok).toBe(false);
+    expect((await assignGuestToTable(b.agencyId, b.weddingId, guest.data.id, table.data.id)).ok).toBe(false);
+    expect((await unassignGuest(b.agencyId, b.weddingId, guest.data.id)).ok).toBe(false);
+    expect((await deleteTable(b.agencyId, b.weddingId, table.data.id)).ok).toBe(false);
+
+    expect(await listTables(a.agencyId, a.weddingId)).toHaveLength(1);
+  });
+
+  it("events: B cannot add to, list, update or delete A's events", async () => {
+    const added = await addWEvent(a.agencyId, a.weddingId, {
+      title: "Роспись",
+      date: "2026-10-20",
+      startMinutes: 840,
+      visibleToCouple: false,
+    });
+    if (!added.ok) throw new Error("setup add failed");
+
+    expect((await addWEvent(b.agencyId, a.weddingId, { title: "x", date: "2026-10-20", startMinutes: null, visibleToCouple: false })).ok).toBe(false);
+    expect(await listWEvents(b.agencyId, a.weddingId)).toEqual([]);
+    expect((await updateWEvent(b.agencyId, a.weddingId, added.data.id, { title: "z", date: "2026-10-20", startMinutes: null, visibleToCouple: true })).ok).toBe(false);
+    expect((await deleteWEvent(b.agencyId, b.weddingId, added.data.id)).ok).toBe(false);
+
+    expect(await listWEvents(a.agencyId, a.weddingId)).toHaveLength(1);
+  });
+
+  it("vendor directory: B cannot list, update or delete A's directory vendors", async () => {
+    const added = await addAgencyVendor(a.agencyId, { name: "Иван Фото", service: "Фотограф" });
+    if (!added.ok) throw new Error("setup add failed");
+
+    expect(await listAgencyVendors(b.agencyId)).toEqual([]);
+    expect((await updateAgencyVendor(b.agencyId, added.data.id, { name: "hack", service: "x" })).ok).toBe(false);
+    expect((await deleteAgencyVendor(b.agencyId, added.data.id)).ok).toBe(false);
+
+    expect(await listAgencyVendors(a.agencyId)).toHaveLength(1);
   });
 });
