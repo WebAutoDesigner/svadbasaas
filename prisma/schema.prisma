@@ -188,6 +188,9 @@ model Wedding {
   checklistItems ChecklistItem[]
   budgetItems    BudgetItem[]
   vendors        Vendor[]
+  documents      Document[]
+  timelineEvents TimelineEvent[]
+  coupleAccess   CoupleAccess?
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -264,4 +267,72 @@ model Vendor {
   updatedAt     DateTime      @updatedAt
 
   @@index([weddingId])
+}
+
+// =============================================================================
+// Документы — файлы свадьбы (локальное хранилище на VPS)
+// =============================================================================
+
+model Document {
+  id           String   @id @default(cuid())
+  weddingId    String
+  wedding      Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name         String
+  storageKey   String // путь внутри UPLOAD_DIR
+  mime         String
+  size         Int
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([weddingId])
+}
+
+// =============================================================================
+// Тайминг свадебного дня
+// =============================================================================
+
+model TimelineEvent {
+  id           String   @id @default(cuid())
+  weddingId    String
+  wedding      Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  startMinutes Int // минуты от 00:00
+  durationMin  Int      @default(0)
+  title        String
+  description  String?
+  responsible  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([weddingId, startMinutes])
+}
+
+// =============================================================================
+// Доступ пары (молодожёнов) — вход по email + одноразовый код (magic link)
+// =============================================================================
+
+model CoupleAccess {
+  id            String          @id @default(cuid())
+  weddingId     String          @unique
+  wedding       Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  email         String
+  name          String?
+  codeHash      String?
+  codeExpiresAt DateTime?
+  failedTries   Int             @default(0)
+  lockedUntil   DateTime?
+  lastLoginAt   DateTime?
+  createdAt     DateTime        @default(now())
+  sessions      CoupleSession[]
+
+  @@index([email])
+}
+
+model CoupleSession {
+  id             String       @id @default(cuid())
+  coupleAccessId String
+  coupleAccess   CoupleAccess @relation(fields: [coupleAccessId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+
+  @@index([expiresAt])
 }

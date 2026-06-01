@@ -45,8 +45,15 @@ export async function uploadDocument(
   if (!(await assertWedding(agencyId, weddingId))) return err("NOT_FOUND");
   if (file.buffer.length > MAX_FILE_SIZE) return err("TOO_LARGE");
 
-  // Проверка по magic bytes, а не по расширению
-  const detected = await fileTypeFromBuffer(file.buffer);
+  // Проверка по magic bytes, а не по расширению.
+  // file-type v22 принимает только Uint8Array/ArrayBuffer, не Node Buffer-объект —
+  // оборачиваем в Uint8Array поверх того же ArrayBuffer.
+  const bytes = new Uint8Array(
+    file.buffer.buffer,
+    file.buffer.byteOffset,
+    file.buffer.byteLength,
+  );
+  const detected = await fileTypeFromBuffer(bytes);
   if (!detected || !ALLOWED_MIME.has(detected.mime)) {
     return err("BAD_TYPE");
   }
