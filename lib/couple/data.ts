@@ -51,6 +51,13 @@ export async function coupleVendors(weddingId: string) {
   });
 }
 
+export async function coupleGuests(weddingId: string) {
+  return db.guest.findMany({
+    where: { weddingId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
 export async function coupleTimeline(weddingId: string) {
   return db.timelineEvent.findMany({
     where: { weddingId },
