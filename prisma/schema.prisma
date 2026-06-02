@@ -191,6 +191,10 @@ model Wedding {
   guestsSeenByAgencyAt  DateTime?
   seatingSeenByAgencyAt DateTime?
 
+  // Удобство агентства (agency-only)
+  source    String? // откуда пришла пара (Instagram, сарафан…)
+  agencyFee Int     @default(0) // гонорар агентства за свадьбу, рубли
+
   checklistItems   ChecklistItem[]
   budgetItems      BudgetItem[]
   vendors          Vendor[]
@@ -201,6 +205,9 @@ model Wedding {
   seatingTables    SeatingTable[]
   coupleActivities CoupleActivity[]
   events           WeddingEvent[]
+  contacts         WeddingContact[]
+  notes            WeddingNote[]
+  payments         AgencyPayment[]
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -456,4 +463,44 @@ model WeddingEvent {
   updatedAt       DateTime @updatedAt
 
   @@index([weddingId, date])
+}
+
+// =============================================================================
+// Удобство агентства (agency-only): контакты пары, заметки, оплаты от пары
+// =============================================================================
+
+model WeddingContact {
+  id        String   @id @default(cuid())
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  label     String // пометка: «Мария», «WhatsApp жениха»
+  value     String // номер / ник / email
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model WeddingNote {
+  id         String   @id @default(cuid())
+  weddingId  String
+  wedding    Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  body       String
+  authorName String? // имя участника агентства на момент записи
+  createdAt  DateTime @default(now())
+
+  @@index([weddingId, createdAt])
+}
+
+model AgencyPayment {
+  id        String   @id @default(cuid())
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  amount    Int      @default(0) // рубли
+  paidOn    DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([weddingId, paidOn])
 }

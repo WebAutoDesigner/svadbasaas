@@ -21,6 +21,7 @@ const baseWedding = {
     .optional()
     .or(z.literal("")),
   coordinatorId: z.string().optional().or(z.literal("")),
+  source: z.string().max(255).optional().or(z.literal("")),
 };
 
 export const createWeddingSchema = z.object(baseWedding);

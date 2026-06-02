@@ -12,6 +12,7 @@ export type WeddingInput = {
   location?: string | undefined;
   guestCount?: number | undefined;
   coordinatorId?: string | undefined;
+  source?: string | undefined;
 };
 
 /**
@@ -75,6 +76,7 @@ export async function createWedding(
         location: input.location || null,
         guestCount: input.guestCount ?? null,
         coordinatorId: coord.data,
+        source: input.source || null,
       },
     });
     return ok({ id: wedding.id });
@@ -106,6 +108,7 @@ export async function updateWedding(
         location: input.location || null,
         guestCount: input.guestCount ?? null,
         coordinatorId: coord.data,
+        source: input.source || null,
         status: input.status,
       },
     });
