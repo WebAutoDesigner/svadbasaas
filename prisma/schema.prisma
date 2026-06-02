@@ -120,6 +120,7 @@ model Agency {
   auditLogs       AuditLog[]
   weddings        Wedding[]
   vendorDirectory AgencyVendor[]
+  templates       Template[]
 
   @@index([isActive])
 }
@@ -208,6 +209,7 @@ model Wedding {
   contacts         WeddingContact[]
   notes            WeddingNote[]
   payments         AgencyPayment[]
+  requests         CoupleRequest[]
 
   @@index([agencyId, deletedAt])
   @@index([agencyId, date])
@@ -503,4 +505,85 @@ model AgencyPayment {
   createdAt DateTime @default(now())
 
   @@index([weddingId, paidOn])
+}
+
+// =============================================================================
+// Шаблоны агентства (анкеты/чек-листы/тайминги/бюджеты) — content в JSON
+// =============================================================================
+
+enum TemplateType {
+  QUESTIONNAIRE
+  CHECKLIST
+  TIMELINE
+  BUDGET
+}
+
+model Template {
+  id        String       @id @default(cuid())
+  agencyId  String
+  agency    Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  type      TemplateType
+  name      String
+  content   Json // QUESTIONNAIRE: {questions:string[]}; CHECKLIST/TIMELINE/BUDGET: {items:[...]}
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([agencyId, type])
+}
+
+// =============================================================================
+// Запросы паре (канал агентство→пара): анкета или задача, инбокс + вложения
+// =============================================================================
+
+enum RequestKind {
+  QUESTIONNAIRE
+  TASK
+}
+
+enum RequestStatus {
+  OPEN
+  DONE
+}
+
+model CoupleRequest {
+  id          String        @id @default(cuid())
+  weddingId   String
+  wedding     Wedding       @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  kind        RequestKind
+  title       String
+  message     String? // текст просьбы (для TASK) или вступление к анкете
+  linkTo      String? // slug раздела для TASK: guests/seating/… (плашка)
+  status      RequestStatus @default(OPEN)
+  coupleReply String? // короткий ответ пары на задачу (для TASK)
+  createdAt   DateTime      @default(now())
+  respondedAt DateTime?
+
+  questions   RequestQuestion[]
+  attachments RequestAttachment[]
+
+  @@index([weddingId, status])
+}
+
+model RequestQuestion {
+  id         String        @id @default(cuid())
+  requestId  String
+  request    CoupleRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  prompt     String
+  answerText String? // свободный текст-ответ пары
+  sortOrder  Int           @default(0)
+
+  @@index([requestId])
+}
+
+model RequestAttachment {
+  id         String        @id @default(cuid())
+  requestId  String
+  request    CoupleRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  storageKey String
+  name       String
+  mime       String
+  size       Int
+  createdAt  DateTime      @default(now())
+
+  @@index([requestId])
 }
