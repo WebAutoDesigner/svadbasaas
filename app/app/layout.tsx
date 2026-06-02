@@ -32,6 +32,12 @@ export default async function AppLayout({
                 Подрядчики
               </Link>
               <Link
+                href="/app/templates"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Шаблоны
+              </Link>
+              <Link
                 href="/app/team"
                 className="text-muted-foreground hover:text-foreground"
               >

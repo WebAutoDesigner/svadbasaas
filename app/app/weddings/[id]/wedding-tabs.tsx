@@ -11,6 +11,7 @@ const TABS = [
   { slug: "guests", label: "Гости" },
   { slug: "seating", label: "Рассадка" },
   { slug: "events", label: "События" },
+  { slug: "requests", label: "Запросы" },
   { slug: "finance", label: "Финансы" },
   { slug: "notes", label: "Заметки" },
   { slug: "documents", label: "Документы" },
