@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireCouple } from "@/lib/couple/session";
-import { coupleWedding } from "@/lib/couple/data";
+import { coupleWedding, coupleAgencyId } from "@/lib/couple/data";
+import { openRequestsCount } from "@/lib/wedding/request";
 import { CoupleNav } from "./couple-nav";
 import { CoupleLogout } from "./couple-logout";
 
@@ -21,6 +22,11 @@ export default async function CoupleLayout({
   const wedding = await coupleWedding(weddingId);
   if (!wedding) redirect("/couple/login");
 
+  const agencyId = await coupleAgencyId(weddingId);
+  const openRequests = agencyId
+    ? await openRequestsCount(agencyId, weddingId)
+    : 0;
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b">
@@ -32,7 +38,7 @@ export default async function CoupleLayout({
         </div>
       </header>
       <div className="container mx-auto px-4 py-2">
-        <CoupleNav weddingId={weddingId} />
+        <CoupleNav weddingId={weddingId} openRequests={openRequests} />
       </div>
       <main className="flex-1">{children}</main>
     </div>

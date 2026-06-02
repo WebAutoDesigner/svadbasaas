@@ -2,6 +2,7 @@ import { requireCoupleForWedding } from "@/lib/couple/session";
 import { coupleAgencyId } from "@/lib/couple/data";
 import { listSeatableGuests, listTables } from "@/lib/wedding/seating";
 import { SeatingBoard } from "@/components/domain/seating-board";
+import { CoupleRequestBanner } from "../request-banner";
 import {
   coupleAddTableAction,
   coupleAssignGuestAction,
@@ -34,6 +35,7 @@ export default async function CoupleSeating({
       <p className="text-sm text-muted-foreground">
         Создавайте столы и сажайте гостей. Агентство видит изменения.
       </p>
+      <CoupleRequestBanner weddingId={weddingId} slug="seating" />
       <SeatingBoard
         weddingId={weddingId}
         tables={tables.map((t) => ({

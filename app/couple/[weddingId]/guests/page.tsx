@@ -1,6 +1,7 @@
 import { requireCoupleForWedding } from "@/lib/couple/session";
 import { coupleGuests } from "@/lib/couple/data";
 import { CoupleGuestsBoard } from "./couple-guests-board";
+import { CoupleRequestBanner } from "../request-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function CoupleGuests({
       <p className="text-sm text-muted-foreground">
         Добавляйте гостей и отмечайте, кто придёт. Агентство видит изменения.
       </p>
+      <CoupleRequestBanner weddingId={weddingId} slug="guests" />
       <CoupleGuestsBoard
         weddingId={weddingId}
         guests={guests.map((g) => ({

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { slug: "", label: "Обзор" },
+  { slug: "requests", label: "Запросы" },
   { slug: "checklist", label: "Чек-лист" },
   { slug: "budget", label: "Бюджет" },
   { slug: "vendors", label: "Подрядчики" },
@@ -15,7 +16,13 @@ const TABS = [
   { slug: "documents", label: "Документы" },
 ];
 
-export function CoupleNav({ weddingId }: { weddingId: string }) {
+export function CoupleNav({
+  weddingId,
+  openRequests = 0,
+}: {
+  weddingId: string;
+  openRequests?: number;
+}) {
   const pathname = usePathname();
   const base = `/couple/${weddingId}`;
 
@@ -35,6 +42,11 @@ export function CoupleNav({ weddingId }: { weddingId: string }) {
             }`}
           >
             {tab.label}
+            {tab.slug === "requests" && openRequests > 0 ? (
+              <span className="ml-1 inline-flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] leading-none px-1.5 py-0.5">
+                {openRequests}
+              </span>
+            ) : null}
           </Link>
         );
       })}

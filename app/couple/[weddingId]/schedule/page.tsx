@@ -2,6 +2,7 @@ import { requireCoupleForWedding } from "@/lib/couple/session";
 import { coupleVisibleEvents } from "@/lib/couple/data";
 import { formatShortDate } from "@/lib/dates";
 import { minutesToTime } from "@/lib/validators/wedding-event";
+import { CoupleRequestBanner } from "../request-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function CoupleSchedule({
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-2xl space-y-6">
       <h1 className="text-xl font-bold">Расписание свадьбы</h1>
+      <CoupleRequestBanner weddingId={weddingId} slug="schedule" />
       {events.length === 0 ? (
         <p className="text-muted-foreground">Расписание появится позже.</p>
       ) : (
