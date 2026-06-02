@@ -5,8 +5,10 @@ import { listMembers } from "@/lib/agency/team";
 import { checklistProgress } from "@/lib/wedding/checklist";
 import { getCoupleAccessForWedding } from "@/lib/couple/auth";
 import { formatWeddingDate, daysUntil, toDateInputValue } from "@/lib/dates";
+import { listContacts } from "@/lib/wedding/contact";
 import { OverviewEditor } from "./overview-editor";
 import { InviteCouple } from "./invite-couple";
+import { ContactsBlock } from "./contacts-block";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +29,11 @@ export default async function WeddingOverviewPage({
   if (!wedding) notFound();
 
   // Три независимых запроса — параллельно, а не друг за другом (быстрее на латентность).
-  const [members, progress, coupleAccess] = await Promise.all([
+  const [members, progress, coupleAccess, contacts] = await Promise.all([
     listMembers(ctx.agencyId),
     checklistProgress(ctx.agencyId, id),
     getCoupleAccessForWedding(id),
+    listContacts(ctx.agencyId, id),
   ]);
   const days = daysUntil(wedding.date);
 
@@ -64,6 +67,7 @@ export default async function WeddingOverviewPage({
 
       <div className="text-sm text-muted-foreground space-y-1">
         {wedding.location ? <div>Локация: {wedding.location}</div> : null}
+        {wedding.source ? <div>Источник: {wedding.source}</div> : null}
         <div>
           Координатор: {wedding.coordinator?.name ?? "не назначен"}
         </div>
@@ -82,8 +86,14 @@ export default async function WeddingOverviewPage({
           coordinatorId: wedding.coordinatorId,
           timezone: wedding.timezone,
           status: wedding.status,
+          source: wedding.source ?? "",
         }}
         coordinators={members.map((m) => ({ id: m.userId, name: m.name }))}
+      />
+
+      <ContactsBlock
+        weddingId={wedding.id}
+        contacts={contacts.map((c) => ({ id: c.id, label: c.label, value: c.value }))}
       />
 
       <div className="pt-2 border-t">

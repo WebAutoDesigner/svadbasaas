@@ -14,6 +14,7 @@ type Values = {
   guestCount?: number | null;
   coordinatorId?: string | null;
   timezone?: string;
+  source?: string;
 };
 
 /**
@@ -132,6 +133,17 @@ export function WeddingFields({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="source">Откуда пришли (источник)</Label>
+        <Input
+          id="source"
+          name="source"
+          defaultValue={values.source ?? ""}
+          disabled={disabled}
+          placeholder="Instagram, сарафан, реклама…"
+        />
       </div>
 
       <input

@@ -41,6 +41,7 @@ function formToInput(formData: FormData) {
     location: formData.get("location") || "",
     guestCount: formData.get("guestCount") || "",
     coordinatorId: formData.get("coordinatorId") || "",
+    source: formData.get("source") || "",
   };
 }
 
@@ -53,6 +54,7 @@ function normalize(data: {
   location?: string;
   guestCount?: number | "";
   coordinatorId?: string;
+  source?: string;
 }) {
   return {
     brideName: data.brideName,
@@ -63,6 +65,7 @@ function normalize(data: {
     location: data.location || undefined,
     guestCount: data.guestCount === "" ? undefined : data.guestCount,
     coordinatorId: data.coordinatorId || undefined,
+    source: data.source || undefined,
   };
 }
 
