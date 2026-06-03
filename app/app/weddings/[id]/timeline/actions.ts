@@ -9,10 +9,22 @@ import {
   updateEvent,
   type TimelineInput,
 } from "@/lib/wedding/timeline";
+import { applyTemplate } from "@/lib/wedding/apply-template";
 import { timelineEventSchema } from "@/lib/validators/timeline";
 
 function revalidate(weddingId: string) {
   revalidatePath(`/app/weddings/${weddingId}/timeline`);
+}
+
+export async function applyTimelineTemplateAction(
+  weddingId: string,
+  templateId: string,
+): Promise<{ error?: string }> {
+  const ctx = await requireAgencyContext();
+  const res = await applyTemplate(ctx.agencyId, weddingId, templateId);
+  if (!res.ok) return { error: "Не удалось применить шаблон" };
+  revalidate(weddingId);
+  return {};
 }
 
 function normalize(input: unknown): TimelineInput | null {

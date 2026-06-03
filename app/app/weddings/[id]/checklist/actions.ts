@@ -2,12 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAgencyContext } from "@/lib/tenant";
-import {
-  addItem,
-  deleteItem,
-  toggleItem,
-  applyTemplate,
-} from "@/lib/wedding/checklist";
+import { addItem, deleteItem, toggleItem } from "@/lib/wedding/checklist";
+import { applyTemplate } from "@/lib/wedding/apply-template";
 import { addItemSchema } from "@/lib/validators/checklist";
 import type { ChecklistPeriod } from "@prisma/client";
 

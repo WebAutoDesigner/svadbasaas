@@ -5,9 +5,9 @@ import { requireAgencyContext } from "@/lib/tenant";
 import {
   addBudgetItem,
   deleteBudgetItem,
-  ensureDefaultCategories,
   updateBudgetItem,
 } from "@/lib/wedding/budget";
+import { applyTemplate } from "@/lib/wedding/apply-template";
 import {
   addBudgetItemSchema,
   updateBudgetItemSchema,
@@ -18,12 +18,13 @@ function revalidate(weddingId: string) {
   revalidatePath(`/app/weddings/${weddingId}`);
 }
 
-export async function ensureCategoriesAction(
+export async function applyBudgetTemplateAction(
   weddingId: string,
+  templateId: string,
 ): Promise<{ error?: string }> {
   const ctx = await requireAgencyContext();
-  const res = await ensureDefaultCategories(ctx.agencyId, weddingId);
-  if (!res.ok) return { error: "Свадьба не найдена" };
+  const res = await applyTemplate(ctx.agencyId, weddingId, templateId);
+  if (!res.ok) return { error: "Не удалось применить шаблон" };
   revalidate(weddingId);
   return {};
 }

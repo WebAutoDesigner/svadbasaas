@@ -4,12 +4,12 @@ import { createAgencyWithOwner } from "@/lib/agency/create";
 import { createWedding } from "@/lib/wedding/wedding";
 import {
   addItem,
-  applyTemplate,
   checklistProgress,
   deleteItem,
   listChecklist,
   toggleItem,
 } from "@/lib/wedding/checklist";
+import { applyTemplate } from "@/lib/wedding/apply-template";
 import { getTemplate } from "@/lib/templates/checklist";
 
 const PREFIX = "chk-test-";
@@ -69,9 +69,15 @@ describe("checklist", () => {
     expect(progress).toEqual({ done: 1, total: 2, percent: 50 });
   });
 
-  it("applies a template", async () => {
+  it("applies a seeded checklist template", async () => {
     const { agencyId, weddingId } = await setup("tpl");
-    const res = await applyTemplate(agencyId, weddingId, "classic");
+    // Агентству при создании засеян редактируемый шаблон «Классическая свадьба».
+    const seeded = await db.template.findFirst({
+      where: { agencyId, type: "CHECKLIST" },
+    });
+    expect(seeded).not.toBeNull();
+
+    const res = await applyTemplate(agencyId, weddingId, seeded!.id);
     expect(res.ok).toBe(true);
 
     const items = await listChecklist(agencyId, weddingId);

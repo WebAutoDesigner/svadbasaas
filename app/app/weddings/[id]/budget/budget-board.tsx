@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   addBudgetItemAction,
+  applyBudgetTemplateAction,
   deleteBudgetItemAction,
-  ensureCategoriesAction,
   updateBudgetItemAction,
 } from "./actions";
+import { ApplyTemplatePicker } from "../apply-template-picker";
 
 type Item = { id: string; name: string; planned: number; actual: number };
+type TemplateOpt = { id: string; name: string };
 type Summary = {
   totalPlanned: number;
   totalActual: number;
@@ -25,32 +27,24 @@ export function BudgetBoard({
   weddingId,
   items,
   summary,
+  templates,
 }: {
   weddingId: string;
   items: Item[];
   summary: Summary;
+  templates: TemplateOpt[];
 }) {
-  const [pending, start] = useTransition();
-
   if (items.length === 0) {
     return (
       <div className="space-y-4">
         <p className="text-muted-foreground">
-          Бюджет пуст. Создайте стандартные статьи или добавляйте свои.
+          Бюджет пуст. Примените шаблон или добавляйте статьи вручную.
         </p>
-        <Button
-          type="button"
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              const res = await ensureCategoriesAction(weddingId);
-              if (res.error) toast.error(res.error);
-              else toast.success("Статьи созданы");
-            })
-          }
-        >
-          Создать стандартные статьи
-        </Button>
+        <ApplyTemplatePicker
+          weddingId={weddingId}
+          templates={templates}
+          action={applyBudgetTemplateAction}
+        />
         <AddRow weddingId={weddingId} />
       </div>
     );
@@ -60,6 +54,13 @@ export function BudgetBoard({
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <ApplyTemplatePicker
+          weddingId={weddingId}
+          templates={templates}
+          action={applyBudgetTemplateAction}
+        />
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Бюджет свадьбы" value={`${fmt(summary.weddingBudget)} ₽`} />
         <Stat label="План (сумма статей)" value={`${fmt(summary.totalPlanned)} ₽`} />

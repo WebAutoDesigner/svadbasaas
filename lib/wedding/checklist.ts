@@ -1,6 +1,5 @@
 import { getDb, tenantScope } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
-import { getTemplate } from "@/lib/templates/checklist";
 import { assertWedding } from "@/lib/wedding/guard";
 import type { ChecklistPeriod } from "@prisma/client";
 
@@ -93,24 +92,3 @@ export async function deleteItem(
   });
 }
 
-export async function applyTemplate(
-  agencyId: string,
-  weddingId: string,
-  templateId: string,
-): Promise<Result<{ added: number }, "NOT_FOUND" | "BAD_TEMPLATE">> {
-  return tenantScope(agencyId, async () => {
-    if (!(await assertWedding(agencyId, weddingId))) return err("NOT_FOUND");
-    const template = getTemplate(templateId);
-    if (!template) return err("BAD_TEMPLATE");
-
-    await getDb().checklistItem.createMany({
-      data: template.items.map((item, idx) => ({
-        weddingId,
-        title: item.title,
-        period: item.period,
-        sortOrder: idx + 1,
-      })),
-    });
-    return ok({ added: template.items.length });
-  });
-}

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAgencyContext } from "@/lib/tenant";
 import { getWedding } from "@/lib/wedding/wedding";
 import { listChecklist } from "@/lib/wedding/checklist";
-import { CHECKLIST_TEMPLATES } from "@/lib/templates/checklist";
+import { listTemplates } from "@/lib/agency/templates";
 import { ChecklistBoard } from "./checklist-board";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,10 @@ export default async function ChecklistPage({
   const wedding = await getWedding(ctx.agencyId, id);
   if (!wedding) notFound();
 
-  const items = await listChecklist(ctx.agencyId, id);
+  const [items, templates] = await Promise.all([
+    listChecklist(ctx.agencyId, id),
+    listTemplates(ctx.agencyId, "CHECKLIST"),
+  ]);
 
   return (
     <ChecklistBoard
@@ -29,7 +32,7 @@ export default async function ChecklistPage({
         done: i.done,
         note: i.note,
       }))}
-      templates={CHECKLIST_TEMPLATES.map((t) => ({ id: t.id, name: t.name }))}
+      templates={templates.map((t) => ({ id: t.id, name: t.name }))}
     />
   );
 }

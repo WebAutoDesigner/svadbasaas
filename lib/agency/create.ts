@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
+import { getTemplate as getChecklistSeed } from "@/lib/templates/checklist";
+import { DEFAULT_BUDGET_CATEGORIES } from "@/lib/templates/budget";
 
 const BCRYPT_COST = 12;
 
@@ -52,6 +54,30 @@ export async function createAgencyWithOwner(
     });
     await tx.agencyMember.create({
       data: { agencyId: agency.id, userId, role: "OWNER" },
+    });
+
+    // Стартовые редактируемые шаблоны (наши зашитые дефолты как Template-записи).
+    const classic = getChecklistSeed("classic");
+    await tx.template.create({
+      data: {
+        agencyId: agency.id,
+        type: "CHECKLIST",
+        name: "Классическая свадьба",
+        content: {
+          items: (classic?.items ?? []).map((i) => ({
+            period: i.period,
+            title: i.title,
+          })),
+        },
+      },
+    });
+    await tx.template.create({
+      data: {
+        agencyId: agency.id,
+        type: "BUDGET",
+        name: "Стандартный бюджет",
+        content: { items: DEFAULT_BUDGET_CATEGORIES.map((name) => ({ name })) },
+      },
     });
     return agency;
   });

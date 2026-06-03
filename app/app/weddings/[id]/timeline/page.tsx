@@ -3,8 +3,11 @@ import { notFound } from "next/navigation";
 import { requireAgencyContext } from "@/lib/tenant";
 import { getWedding } from "@/lib/wedding/wedding";
 import { listTimeline, minutesToHHMM } from "@/lib/wedding/timeline";
+import { listTemplates } from "@/lib/agency/templates";
 import { buttonVariants } from "@/components/ui/button";
 import { TimelineBoard } from "./timeline-board";
+import { ApplyTemplatePicker } from "../apply-template-picker";
+import { applyTimelineTemplateAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +21,19 @@ export default async function TimelinePage({
   const wedding = await getWedding(ctx.agencyId, id);
   if (!wedding) notFound();
 
-  const events = await listTimeline(ctx.agencyId, id);
+  const [events, templates] = await Promise.all([
+    listTimeline(ctx.agencyId, id),
+    listTemplates(ctx.agencyId, "TIMELINE"),
+  ]);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center gap-2">
+        <ApplyTemplatePicker
+          weddingId={id}
+          templates={templates.map((t) => ({ id: t.id, name: t.name }))}
+          action={applyTimelineTemplateAction}
+        />
         <Link
           href={`/app/weddings/${id}/timeline/print`}
           target="_blank"

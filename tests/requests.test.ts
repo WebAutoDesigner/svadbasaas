@@ -77,7 +77,8 @@ describe("templates", () => {
     expect((await updateTemplate(agencyId, t.data.id, { name: "Брифинг v2", content: { questions: ["Q"] } })).ok).toBe(true);
 
     const other = await setup("tpl2");
-    expect(await listTemplates(other.agencyId)).toHaveLength(0);
+    // у нового агентства есть засеянные CHECKLIST+BUDGET, но НЕ QUESTIONNAIRE этого агентства
+    expect(await listTemplates(other.agencyId, "QUESTIONNAIRE")).toHaveLength(0);
     expect((await deleteTemplate(other.agencyId, t.data.id)).ok).toBe(false);
     expect((await deleteTemplate(agencyId, t.data.id)).ok).toBe(true);
   });
