@@ -1,7 +1,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# --ignore-scripts: postinstall запускает prisma generate, а схемы на этой
+# стадии ещё нет. Генерация выполняется явно в builder после COPY.
+RUN npm ci --ignore-scripts
 
 FROM node:20-alpine AS builder
 WORKDIR /app
