@@ -6,6 +6,7 @@ import { checklistProgress } from "@/lib/wedding/checklist";
 import { getCoupleAccessForWedding } from "@/lib/couple/auth";
 import { formatWeddingDate, daysUntil, toDateInputValue } from "@/lib/dates";
 import { listContacts } from "@/lib/wedding/contact";
+import { StatCard } from "@/components/domain/stat-card";
 import { OverviewEditor } from "./overview-editor";
 import { InviteCouple } from "./invite-couple";
 import { ContactsBlock } from "./contacts-block";
@@ -39,9 +40,9 @@ export default async function WeddingOverviewPage({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Дата" value={formatWeddingDate(wedding.date)} />
-        <Stat
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Дата" value={formatWeddingDate(wedding.date)} />
+        <StatCard
           label="До свадьбы"
           value={
             wedding.status === "PLANNING"
@@ -51,11 +52,11 @@ export default async function WeddingOverviewPage({
               : STATUS_LABELS[wedding.status] ?? wedding.status
           }
         />
-        <Stat
+        <StatCard
           label="Бюджет"
           value={`${wedding.budget.toLocaleString("ru-RU")} ₽`}
         />
-        <Stat
+        <StatCard
           label="Готовность"
           value={
             progress.total === 0
@@ -65,13 +66,17 @@ export default async function WeddingOverviewPage({
         />
       </div>
 
-      <div className="text-sm text-muted-foreground space-y-1">
-        {wedding.location ? <div>Локация: {wedding.location}</div> : null}
-        {wedding.source ? <div>Источник: {wedding.source}</div> : null}
-        <div>
-          Координатор: {wedding.coordinator?.name ?? "не назначен"}
-        </div>
-        <div>Статус: {STATUS_LABELS[wedding.status] ?? wedding.status}</div>
+      <div className="flex flex-wrap gap-x-10 gap-y-4 rounded-lg border bg-card px-5 py-4 shadow-sm">
+        <InfoItem label="Локация" value={wedding.location ?? "не указана"} />
+        <InfoItem
+          label="Координатор"
+          value={wedding.coordinator?.name ?? "не назначен"}
+        />
+        <InfoItem label="Источник" value={wedding.source ?? "—"} />
+        <InfoItem
+          label="Гостей"
+          value={wedding.guestCount != null ? String(wedding.guestCount) : "—"}
+        />
       </div>
 
       <OverviewEditor
@@ -96,19 +101,24 @@ export default async function WeddingOverviewPage({
         contacts={contacts.map((c) => ({ id: c.id, label: c.label, value: c.value }))}
       />
 
-      <div className="pt-2 border-t">
-        <h2 className="font-semibold mb-2">Кабинет молодожёнов</h2>
+      <div className="border-t pt-6">
+        <h2 className="text-xl font-semibold">Кабинет молодожёнов</h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Личный кабинет пары: гости, чек-лист, тайминг и запросы — в одном месте.
+        </p>
         <InviteCouple weddingId={wedding.id} currentEmail={coupleAccess?.email ?? null} />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border rounded-md p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-semibold mt-1">{value}</div>
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium">{value}</div>
     </div>
   );
 }

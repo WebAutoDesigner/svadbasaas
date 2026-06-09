@@ -22,9 +22,9 @@ export function ContactsBlock({
   const [adding, setAdding] = useState(false);
 
   return (
-    <div className="pt-2 border-t">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="font-semibold">Контакты пары</h2>
+    <div className="border-t pt-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Контакты пары</h2>
         <Button type="button" variant="outline" size="sm" onClick={() => setAdding((v) => !v)}>
           {adding ? "Отмена" : "Добавить контакт"}
         </Button>

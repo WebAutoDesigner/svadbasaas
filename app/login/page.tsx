@@ -24,15 +24,34 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold text-center">Вход для агентств</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <div className="mx-auto grid size-14 place-items-center rounded-full border border-gold font-heading text-2xl text-gold">
+            S
+          </div>
+          <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.26em] text-gold">
+            Svadba Plus
+          </div>
+          <h1 className="mt-2 text-3xl font-semibold">Вход для агентств</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Платформа управления свадьбами
+          </p>
+        </div>
         {errorMessage ? (
-          <p className="text-sm text-destructive text-center" role="alert">
+          <p className="mb-4 text-center text-sm text-destructive" role="alert">
             {errorMessage}
           </p>
         ) : null}
-        <LoginForm />
+        <div className="rounded-xl border bg-card p-6 shadow-sm md:p-7">
+          <LoginForm />
+        </div>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Кабинет пары —{" "}
+          <a href="/couple/login" className="underline underline-offset-4 hover:text-foreground">
+            отдельный вход
+          </a>
+        </p>
       </div>
     </main>
   );

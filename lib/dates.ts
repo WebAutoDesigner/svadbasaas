@@ -13,6 +13,11 @@ export function formatShortDate(date: Date): string {
   return formatInTimeZone(date, "UTC", "dd.MM.yyyy");
 }
 
+/** Короткая дата dd.MM (UTC — тот же день, что formatWeddingDate) */
+export function formatDayMonth(date: Date): string {
+  return formatInTimeZone(date, "UTC", "dd.MM");
+}
+
 /** Сколько дней до даты (от сегодня, UTC-нормализация по дню) */
 export function daysUntil(date: Date): number {
   const today = new Date();

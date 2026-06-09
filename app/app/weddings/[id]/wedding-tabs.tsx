@@ -23,7 +23,7 @@ export function WeddingTabs({ weddingId }: { weddingId: string }) {
   const base = `/app/weddings/${weddingId}`;
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b -mx-1 px-1">
+    <nav className="-mx-1 flex flex-wrap gap-x-5 border-b px-1">
       {TABS.map((tab) => {
         const href = tab.slug ? `${base}/${tab.slug}` : base;
         const active = tab.slug
@@ -33,9 +33,9 @@ export function WeddingTabs({ weddingId }: { weddingId: string }) {
           <Link
             key={tab.slug}
             href={href}
-            className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+            className={`-mb-px whitespace-nowrap border-b-2 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
               active
-                ? "border-primary font-medium"
+                ? "border-gold text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >

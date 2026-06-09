@@ -16,6 +16,10 @@ export default function RootLayout({
   return (
     <html lang="ru" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans">
+        <div
+          aria-hidden
+          className="h-[3px] w-full bg-gradient-to-r from-gold via-gold-soft to-gold print:hidden"
+        />
         <ErrorBoundary>{children}</ErrorBoundary>
         <Toaster richColors position="top-right" />
       </body>

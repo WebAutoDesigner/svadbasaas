@@ -66,7 +66,7 @@ export function LoginForm() {
           {error}
         </p>
       ) : null}
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" variant="gold" className="w-full" disabled={pending}>
         {pending ? "Входим…" : "Войти"}
       </Button>
     </form>

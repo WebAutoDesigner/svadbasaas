@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireAgencyContext } from "@/lib/tenant";
 import { listWeddings } from "@/lib/wedding/wedding";
 import { buttonVariants } from "@/components/ui/button";
-import { formatWeddingDate, daysUntil } from "@/lib/dates";
+import { WeddingRow } from "@/components/domain/wedding-row";
+import { formatWeddingDate, formatDayMonth, daysUntil } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -19,68 +20,90 @@ export default async function WeddingsPage({
 
   const weddings = await listWeddings(ctx.agencyId, { includeCompleted });
 
+  const filterBase =
+    "rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors";
+
   return (
-    <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Свадьбы</h1>
-        <Link href="/app/weddings/new" className={buttonVariants()}>
-          Новая свадьба
+    <div className="container mx-auto max-w-5xl space-y-8 p-4 md:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">
+            Агентство
+          </div>
+          <h1 className="mt-2 text-4xl font-semibold">Свадьбы</h1>
+        </div>
+        <Link
+          href="/app/weddings/new"
+          className={buttonVariants({ variant: "gold" })}
+        >
+          + Новая свадьба
         </Link>
       </div>
 
-      <div className="flex gap-2 text-sm">
+      <div className="flex gap-2">
         <Link
           href="/app/weddings"
-          className={!includeCompleted ? "font-semibold" : "text-muted-foreground"}
+          className={`${filterBase} ${
+            !includeCompleted
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
         >
           Активные
         </Link>
-        <span className="text-muted-foreground">·</span>
         <Link
           href="/app/weddings?all=1"
-          className={includeCompleted ? "font-semibold" : "text-muted-foreground"}
+          className={`${filterBase} ${
+            includeCompleted
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
         >
           Все
         </Link>
       </div>
 
       {weddings.length === 0 ? (
-        <p className="text-muted-foreground">
-          Свадеб пока нет.{" "}
-          <Link href="/app/weddings/new" className="underline">
-            Создайте первую
+        <div className="rounded-xl border bg-card px-6 py-12 text-center shadow-sm">
+          <div className="font-heading text-2xl">Свадеб пока нет</div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Создайте первую — и начните вести её вместе с парой.
+          </p>
+          <Link
+            href="/app/weddings/new"
+            className={`${buttonVariants({ variant: "gold" })} mt-6`}
+          >
+            + Новая свадьба
           </Link>
-          .
-        </p>
+        </div>
       ) : (
-        <div className="border rounded-md divide-y">
+        <div className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
           {weddings.map((w) => {
             const days = daysUntil(w.date);
+            const trailingSub =
+              w.status === "PLANNING"
+                ? days >= 0
+                  ? days === 0
+                    ? "сегодня"
+                    : `через ${days} дн.`
+                  : "прошла"
+                : w.status === "COMPLETED"
+                  ? "завершена"
+                  : "отменена";
             return (
-              <Link
+              <WeddingRow
                 key={w.id}
                 href={`/app/weddings/${w.id}`}
-                className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 hover:bg-accent/50"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium truncate">
-                    {w.brideName} & {w.groomName}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatWeddingDate(w.date)}
-                    {w.location ? ` · ${w.location}` : ""}
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground whitespace-nowrap">
-                  {w.status === "PLANNING"
-                    ? days >= 0
-                      ? `через ${days} дн.`
-                      : "прошла"
-                    : w.status === "COMPLETED"
-                      ? "завершена"
-                      : "отменена"}
-                </div>
-              </Link>
+                brideName={w.brideName}
+                groomName={w.groomName}
+                dateLine={
+                  w.location
+                    ? `${formatWeddingDate(w.date)} · ${w.location}`
+                    : formatWeddingDate(w.date)
+                }
+                trailingTitle={formatDayMonth(w.date)}
+                trailingSub={trailingSub}
+              />
             );
           })}
         </div>
