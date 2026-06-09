@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Прод-образ (docker/Dockerfile) копирует .next/standalone — без этого
+  // флага standalone не генерируется и сборка образа падает.
+  output: "standalone",
   // Прячем дев-индикатор Next.js (кнопка «N» с Route/Bundler/Preferences).
   // Это инструмент фреймворка, только для dev — в проде его и так нет.
   devIndicators: false,
