@@ -99,7 +99,9 @@ function FeeStat({ weddingId, fee }: { weddingId: string; fee: number }) {
             name="agencyFee"
             type="number"
             min={0}
-            defaultValue={fee}
+            defaultValue={fee || ""}
+            placeholder="0"
+            onFocus={(e) => e.target.select()}
             disabled={pending}
           />
           <Button type="submit" size="sm" disabled={pending}>
@@ -213,7 +215,9 @@ function PaymentForm({
             name="amount"
             type="number"
             min={0}
-            defaultValue={payment ? String(payment.amount) : "0"}
+            defaultValue={payment ? String(payment.amount) : ""}
+            placeholder="0"
+            onFocus={(e) => e.target.select()}
             disabled={pending}
           />
         </div>

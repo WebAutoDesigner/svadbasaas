@@ -85,7 +85,8 @@ export function WeddingFields({
             name="budget"
             type="number"
             min={0}
-            defaultValue={values.budget ?? 0}
+            defaultValue={values.budget || ""}
+            placeholder="0"
             disabled={disabled}
           />
           {fieldErrors?.["budget"] ? (

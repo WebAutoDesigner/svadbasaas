@@ -90,18 +90,21 @@ export function BudgetBoard({
 }
 
 function BudgetRow({ weddingId, item }: { weddingId: string; item: Item }) {
-  const [planned, setPlanned] = useState(item.planned);
-  const [actual, setActual] = useState(item.actual);
+  // Строковое состояние: позволяет полностью стереть поле (а не залипший «0»).
+  const [planned, setPlanned] = useState(String(item.planned));
+  const [actual, setActual] = useState(String(item.actual));
   const [pending, start] = useTransition();
 
-  const dirty = planned !== item.planned || actual !== item.actual;
+  const plannedNum = Number(planned) || 0;
+  const actualNum = Number(actual) || 0;
+  const dirty = plannedNum !== item.planned || actualNum !== item.actual;
 
   function save() {
     if (!dirty) return;
     start(async () => {
       const res = await updateBudgetItemAction(weddingId, item.id, {
-        planned,
-        actual,
+        planned: plannedNum,
+        actual: actualNum,
       });
       if (res.error) toast.error(res.error);
     });
@@ -113,18 +116,24 @@ function BudgetRow({ weddingId, item }: { weddingId: string; item: Item }) {
       <Input
         type="number"
         min={0}
+        inputMode="numeric"
         value={planned}
+        placeholder="0"
         disabled={pending}
-        onChange={(e) => setPlanned(Number(e.target.value) || 0)}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => setPlanned(e.target.value)}
         onBlur={save}
         className="w-28 text-right h-8"
       />
       <Input
         type="number"
         min={0}
+        inputMode="numeric"
         value={actual}
+        placeholder="0"
         disabled={pending}
-        onChange={(e) => setActual(Number(e.target.value) || 0)}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => setActual(e.target.value)}
         onBlur={save}
         className="w-28 text-right h-8"
       />

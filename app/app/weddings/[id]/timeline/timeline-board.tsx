@@ -161,7 +161,7 @@ function EventForm({
       onSubmit={handleSubmit}
       className="border rounded-md p-4 space-y-3 bg-muted/20"
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="startTime">Время</Label>
           <Input
@@ -180,7 +180,8 @@ function EventForm({
             name="durationMin"
             type="number"
             min={0}
-            defaultValue={event?.durationMin ?? 0}
+            defaultValue={event?.durationMin || ""}
+            placeholder="0"
             disabled={pending}
           />
         </div>

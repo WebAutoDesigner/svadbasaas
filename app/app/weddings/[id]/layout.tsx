@@ -35,17 +35,18 @@ export default async function WeddingLayout({
   const showCountdown = wedding.status === "PLANNING" && days >= 0;
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-4 md:p-8">
-      <div className="print:hidden">
-        <Link
-          href="/app/weddings"
-          className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-gold"
-        >
-          ← Все свадьбы
-        </Link>
+    <div className="container mx-auto px-4 py-6 md:px-6 md:py-8">
+      <Link
+        href="/app/weddings"
+        className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-gold print:hidden"
+      >
+        ← Все свадьбы
+      </Link>
 
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-          <div className="min-w-0">
+      {/* Двухколоночная раскладка: контент слева, навигация разделов — колонкой справа. */}
+      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-10">
+        <div className="min-w-0">
+          <div className="print:hidden">
             <div className="flex items-center gap-3">
               <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
                 Свадьба
@@ -54,35 +55,40 @@ export default async function WeddingLayout({
                 {STATUS_LABELS[wedding.status] ?? wedding.status}
               </span>
             </div>
-            <h1 className="mt-2 text-4xl font-semibold leading-[1.05] md:text-5xl">
-              {wedding.brideName}{" "}
-              <span className="font-normal italic text-gold">&</span>{" "}
-              {wedding.groomName}
-            </h1>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {formatWeddingDate(wedding.date)}
-              {wedding.location ? ` · ${wedding.location}` : ""}
-            </p>
+            <div className="mt-2 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+              <div className="min-w-0">
+                <h1 className="text-4xl font-semibold leading-[1.05] md:text-5xl">
+                  {wedding.brideName}{" "}
+                  <span className="font-normal italic text-gold">&</span>{" "}
+                  {wedding.groomName}
+                </h1>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {formatWeddingDate(wedding.date)}
+                  {wedding.location ? ` · ${wedding.location}` : ""}
+                </p>
+              </div>
+              {showCountdown ? (
+                <div className="pb-1 text-right">
+                  <div className="font-heading text-4xl leading-none text-gold md:text-5xl">
+                    {days}
+                  </div>
+                  <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {pluralDays(days)} до свадьбы
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
 
-          {showCountdown ? (
-            <div className="pb-1 text-right">
-              <div className="font-heading text-4xl leading-none text-gold md:text-5xl">
-                {days}
-              </div>
-              <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {pluralDays(days)} до свадьбы
-              </div>
-            </div>
-          ) : null}
+          <div className="mt-8 border-t pt-6">{children}</div>
         </div>
-      </div>
 
-      <div className="print:hidden">
-        <WeddingTabs weddingId={id} />
+        <aside className="order-first lg:order-none print:hidden">
+          <div className="lg:sticky lg:top-24">
+            <WeddingTabs weddingId={id} />
+          </div>
+        </aside>
       </div>
-
-      <div className="pt-1">{children}</div>
     </div>
   );
 }

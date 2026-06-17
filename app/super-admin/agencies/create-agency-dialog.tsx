@@ -124,11 +124,26 @@ function SuccessPanel({
   ].join("\n");
 
   async function copy() {
+    // navigator.clipboard работает только в защищённом контексте (HTTPS/localhost).
+    // На голом HTTP используем запасной способ через скрытую textarea.
     try {
-      await navigator.clipboard.writeText(credentialsText);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(credentialsText);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = credentialsText;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (!ok) throw new Error("execCommand failed");
+      }
       toast.success("Скопировано — отправьте агентству");
     } catch {
-      toast.error("Не удалось скопировать");
+      toast.error("Не удалось скопировать — выделите текст вручную");
     }
   }
 
