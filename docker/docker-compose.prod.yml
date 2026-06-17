@@ -10,7 +10,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: production
     ports:
-      - "127.0.0.1:3012:3000"
+      - "3012:3000"  # 0.0.0.0 — прямой доступ по IP без Caddy/домена
     volumes:
       - /data/svadba-uploads:/app/uploads
     depends_on:
