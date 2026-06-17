@@ -9,6 +9,7 @@ import { logAction } from "@/lib/audit";
 export type CreateAgencyFormState = {
   ok?: boolean;
   error?: string;
+  created?: { agencyName: string; ownerName: string; phone: string; password: string };
   fieldErrors?: Partial<
     Record<"agencyName" | "ownerPhone" | "ownerName" | "ownerPassword", string>
   >;
@@ -64,7 +65,15 @@ export async function createAgencyAction(
   });
 
   revalidatePath("/super-admin/agencies");
-  return { ok: true };
+  return {
+    ok: true,
+    created: {
+      agencyName: parsed.data.agencyName,
+      ownerName: parsed.data.ownerName,
+      phone: parsed.data.ownerPhone,
+      password: parsed.data.ownerPassword,
+    },
+  };
 }
 
 export async function toggleAgencyActiveAction(
