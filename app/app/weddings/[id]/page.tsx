@@ -106,7 +106,7 @@ export default async function WeddingOverviewPage({
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Личный кабинет пары: гости, чек-лист, тайминг и запросы — в одном месте.
         </p>
-        <InviteCouple weddingId={wedding.id} currentEmail={coupleAccess?.email ?? null} />
+        <InviteCouple weddingId={wedding.id} currentPhone={coupleAccess?.phone ?? null} />
       </div>
     </div>
   );

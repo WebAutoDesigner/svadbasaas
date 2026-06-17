@@ -8,10 +8,10 @@ import { inviteCoupleAction } from "./invite-action";
 
 export function InviteCouple({
   weddingId,
-  currentEmail,
+  currentPhone,
 }: {
   weddingId: string;
-  currentEmail: string | null;
+  currentPhone: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -19,7 +19,7 @@ export function InviteCouple({
   if (!open) {
     return (
       <Button type="button" variant="outline" onClick={() => setOpen(true)}>
-        {currentEmail ? `Доступ пары: ${currentEmail}` : "Пригласить пару"}
+        {currentPhone ? `Доступ пары: ${currentPhone}` : "Пригласить пару"}
       </Button>
     );
   }
@@ -33,20 +33,30 @@ export function InviteCouple({
           const res = await inviteCoupleAction(weddingId, fd);
           if (res.error) toast.error(res.error);
           else {
-            toast.success("Доступ выдан. Пара входит на /couple/login по этому email.");
+            toast.success("Доступ выдан. Передайте паре телефон и пароль для входа.");
             setOpen(false);
           }
         });
       }}
-      className="flex flex-col sm:flex-row gap-2 border rounded-md p-3"
+      className="flex flex-col gap-2 border rounded-md p-3 sm:flex-row sm:flex-wrap"
     >
       <Input
-        name="email"
-        type="email"
-        placeholder="email пары"
-        defaultValue={currentEmail ?? ""}
+        name="phone"
+        type="tel"
+        inputMode="tel"
+        placeholder="телефон пары"
+        defaultValue={currentPhone ?? ""}
         required
         disabled={pending}
+        className="sm:max-w-44"
+      />
+      <Input
+        name="password"
+        type="text"
+        placeholder="пароль (≥8 симв)"
+        required
+        disabled={pending}
+        className="sm:max-w-44"
       />
       <Input name="name" placeholder="имена (необяз.)" disabled={pending} />
       <div className="flex gap-2">

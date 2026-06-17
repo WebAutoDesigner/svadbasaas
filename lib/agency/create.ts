@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
+import { phoneToLoginEmail } from "@/lib/phone";
 import { getTemplate as getChecklistSeed } from "@/lib/templates/checklist";
 import { DEFAULT_BUDGET_CATEGORIES } from "@/lib/templates/budget";
 
@@ -9,7 +10,7 @@ const BCRYPT_COST = 12;
 
 export type CreateAgencyInput = {
   agencyName: string;
-  ownerEmail: string;
+  ownerPhone: string; // канонический "7XXXXXXXXXX"
   ownerName: string;
   ownerPassword: string;
 };
@@ -21,12 +22,15 @@ export type CreateAgencyOutput = {
 
 export async function createAgencyWithOwner(
   input: CreateAgencyInput,
-): Promise<Result<CreateAgencyOutput, "EMAIL_TAKEN">> {
+): Promise<Result<CreateAgencyOutput, "PHONE_TAKEN">> {
   const existing = await db.user.findUnique({
-    where: { email: input.ownerEmail },
+    where: { phone: input.ownerPhone },
   });
-  if (existing) return err("EMAIL_TAKEN");
+  if (existing) return err("PHONE_TAKEN");
 
+  // Better-Auth опознаёт по email-строке — кладём синтетический e-mail из
+  // телефона (писем на него не шлём, это просто уникальный ключ входа).
+  const loginEmail = phoneToLoginEmail(input.ownerPhone);
   const passwordHash = await bcrypt.hash(input.ownerPassword, BCRYPT_COST);
   const userId = randomUUID();
   const accountId = randomUUID();
@@ -38,15 +42,16 @@ export async function createAgencyWithOwner(
     await tx.user.create({
       data: {
         id: userId,
-        email: input.ownerEmail,
+        email: loginEmail,
+        phone: input.ownerPhone,
         name: input.ownerName,
-        emailVerified: true, // верифицирован вручную при создании супер-админом
+        emailVerified: true, // создан вручную супер-админом
       },
     });
     await tx.account.create({
       data: {
         id: accountId,
-        accountId: input.ownerEmail,
+        accountId: loginEmail,
         providerId: "credential",
         userId,
         password: passwordHash,

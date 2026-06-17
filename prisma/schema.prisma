@@ -38,6 +38,7 @@ model SuperAdminSession {
 model User {
   id            String   @id
   email         String   @unique
+  phone         String?  @unique // логин по телефону (вход владельца агентства)
   name          String
   emailVerified Boolean  @default(false)
   image         String?
@@ -333,7 +334,9 @@ model CoupleAccess {
   id            String          @id @default(cuid())
   weddingId     String          @unique
   wedding       Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  email         String
+  phone         String?         @unique // логин пары (вход по телефону+паролю)
+  passwordHash  String? // пароль пары, задаёт агентство при приглашении
+  email         String? // legacy: старый вход по коду на email (больше не используется)
   name          String?
   codeHash      String?
   codeExpiresAt DateTime?

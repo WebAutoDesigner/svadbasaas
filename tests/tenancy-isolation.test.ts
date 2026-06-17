@@ -27,13 +27,13 @@ describe("multi-tenancy: agency isolation", () => {
   it("each agency has its own scoped data via agency_id", async () => {
     const agencyA = await createAgencyWithOwner({
       agencyName: `${TEST_PREFIX}A`,
-      ownerEmail: `${TEST_PREFIX}a@example.com`,
+      ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
       ownerName: "Owner A",
       ownerPassword: "passwordA-12345",
     });
     const agencyB = await createAgencyWithOwner({
       agencyName: `${TEST_PREFIX}B`,
-      ownerEmail: `${TEST_PREFIX}b@example.com`,
+      ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
       ownerName: "Owner B",
       ownerPassword: "passwordB-12345",
     });
@@ -72,11 +72,11 @@ describe("multi-tenancy: agency isolation", () => {
     expect(crossB).toBeNull();
   });
 
-  it("rejects duplicate owner email", async () => {
-    const email = `${TEST_PREFIX}dup@example.com`;
+  it("rejects duplicate owner phone", async () => {
+    const dupPhone = `7${Math.floor(1e9 + Math.random() * 8.9e9)}`;
     const first = await createAgencyWithOwner({
       agencyName: `${TEST_PREFIX}First`,
-      ownerEmail: email,
+      ownerPhone: dupPhone,
       ownerName: "First",
       ownerPassword: "password-123-45",
     });
@@ -84,11 +84,11 @@ describe("multi-tenancy: agency isolation", () => {
 
     const second = await createAgencyWithOwner({
       agencyName: `${TEST_PREFIX}Second`,
-      ownerEmail: email,
+      ownerPhone: dupPhone,
       ownerName: "Second",
       ownerPassword: "password-678-90",
     });
     expect(second.ok).toBe(false);
-    if (!second.ok) expect(second.error).toBe("EMAIL_TAKEN");
+    if (!second.ok) expect(second.error).toBe("PHONE_TAKEN");
   });
 });

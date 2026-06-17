@@ -4,39 +4,34 @@ import { createAgencyWithOwner } from "@/lib/agency/create";
 import { createWedding } from "@/lib/wedding/wedding";
 import {
   getCoupleSession,
-  requestLoginCode,
   upsertCoupleAccess,
-  verifyLoginCode,
+  verifyCouplePassword,
 } from "@/lib/couple/auth";
 import { coupleChecklist } from "@/lib/couple/data";
 import { addItem } from "@/lib/wedding/checklist";
 
 const PREFIX = "cpl-test-";
-const EMAIL = `${PREFIX}pair@example.com`;
+const PASSWORD = "couple-pass-123";
+
+function randPhone(): string {
+  return `7900${Math.floor(1_000_000 + Math.random() * 8_999_999)}`;
+}
 
 async function cleanup() {
-  await db.coupleSession.deleteMany({
-    where: { coupleAccess: { email: { startsWith: PREFIX } } },
+  // Каскад: удаление свадьбы убирает coupleAccess + сессии + чек-лист.
+  await db.wedding.deleteMany({
+    where: { agency: { name: { startsWith: PREFIX } } },
   });
-  await db.coupleAccess.deleteMany({ where: { email: { startsWith: PREFIX } } });
-  await db.checklistItem.deleteMany({
-    where: { wedding: { agency: { name: { startsWith: PREFIX } } } },
-  });
-  await db.wedding.deleteMany({ where: { agency: { name: { startsWith: PREFIX } } } });
   await db.agencyMember.deleteMany({
-    where: { user: { email: { startsWith: PREFIX } } },
+    where: { agency: { name: { startsWith: PREFIX } } },
   });
-  await db.account.deleteMany({
-    where: { user: { email: { startsWith: PREFIX } } },
-  });
-  await db.user.deleteMany({ where: { email: { startsWith: PREFIX } } });
   await db.agency.deleteMany({ where: { name: { startsWith: PREFIX } } });
 }
 
 async function setup(suffix: string): Promise<{ agencyId: string; weddingId: string }> {
   const a = await createAgencyWithOwner({
     agencyName: `${PREFIX}${suffix}`,
-    ownerEmail: `${PREFIX}${suffix}-owner@example.com`,
+    ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
     ownerName: "Owner",
     ownerPassword: "password-123-456",
   });
@@ -52,67 +47,62 @@ async function setup(suffix: string): Promise<{ agencyId: string; weddingId: str
   return { agencyId: a.data.agencyId, weddingId: w.data.id };
 }
 
-describe("couple access", () => {
+describe("couple access (телефон + пароль)", () => {
   beforeEach(cleanup);
   afterAll(cleanup);
 
-  it("full login flow: invite → request code → verify → session", async () => {
+  it("full login: invite → verify password → session", async () => {
     const { weddingId } = await setup("flow");
-    await upsertCoupleAccess(weddingId, EMAIL, "Анна и Пётр");
+    const phone = randPhone();
+    await upsertCoupleAccess(weddingId, phone, PASSWORD, "Анна и Пётр");
 
-    const req = await requestLoginCode(EMAIL);
-    expect(req.ok).toBe(true);
-    if (!req.ok) return;
-
-    const verify = await verifyLoginCode(EMAIL, req.data.code);
+    const verify = await verifyCouplePassword(phone, PASSWORD);
     expect(verify.ok).toBe(true);
     if (!verify.ok) return;
     expect(verify.data.weddingId).toBe(weddingId);
 
     const session = await getCoupleSession(verify.data.sessionId);
     expect(session?.weddingId).toBe(weddingId);
+    expect(session?.phone).toBe(phone);
   });
 
-  it("rejects wrong code", async () => {
+  it("rejects wrong password", async () => {
     const { weddingId } = await setup("wrong");
-    await upsertCoupleAccess(weddingId, EMAIL, null);
-    await requestLoginCode(EMAIL);
+    const phone = randPhone();
+    await upsertCoupleAccess(weddingId, phone, PASSWORD, null);
 
-    const verify = await verifyLoginCode(EMAIL, "000000");
-    // код случайный — практически наверняка неверный; если совпал, пропускаем
-    if (!verify.ok) expect(verify.error).toBe("WRONG_CODE");
+    const verify = await verifyCouplePassword(phone, "nope-wrong-pass");
+    expect(verify.ok).toBe(false);
+    if (!verify.ok) expect(verify.error).toBe("INVALID");
   });
 
-  it("code is one-time (second verify fails)", async () => {
-    const { weddingId } = await setup("once");
-    await upsertCoupleAccess(weddingId, EMAIL, null);
-    const req = await requestLoginCode(EMAIL);
-    if (!req.ok) throw new Error("request failed");
+  it("re-invite resets password", async () => {
+    const { weddingId } = await setup("reset");
+    const phone = randPhone();
+    await upsertCoupleAccess(weddingId, phone, PASSWORD, null);
+    await upsertCoupleAccess(weddingId, phone, "new-pass-456", null);
 
-    const first = await verifyLoginCode(EMAIL, req.data.code);
-    expect(first.ok).toBe(true);
-
-    const second = await verifyLoginCode(EMAIL, req.data.code);
-    expect(second.ok).toBe(false); // код погашен
+    expect((await verifyCouplePassword(phone, PASSWORD)).ok).toBe(false);
+    expect((await verifyCouplePassword(phone, "new-pass-456")).ok).toBe(true);
   });
 
   it("locks after 5 failed attempts", async () => {
     const { weddingId } = await setup("lock");
-    await upsertCoupleAccess(weddingId, EMAIL, null);
-    await requestLoginCode(EMAIL);
+    const phone = randPhone();
+    await upsertCoupleAccess(weddingId, phone, PASSWORD, null);
 
     for (let i = 0; i < 5; i++) {
-      await verifyLoginCode(EMAIL, "111111");
+      await verifyCouplePassword(phone, "bad-attempt");
     }
-    const locked = await verifyLoginCode(EMAIL, "111111");
+    const locked = await verifyCouplePassword(phone, PASSWORD);
     expect(locked.ok).toBe(false);
     if (!locked.ok) expect(locked.error).toBe("LOCKED");
   });
 
-  it("returns NO_ACCESS for unknown email", async () => {
-    const req = await requestLoginCode(`${PREFIX}nobody@example.com`);
-    expect(req.ok).toBe(false);
-    if (!req.ok) expect(req.error).toBe("NO_ACCESS");
+  it("unknown phone → INVALID (без раскрытия существования)", async () => {
+    const res = await verifyCouplePassword(randPhone(), PASSWORD);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe("INVALID");
   });
 
   it("couple data fetchers are scoped to their wedding", async () => {
@@ -123,9 +113,7 @@ describe("couple access", () => {
       period: "SIX_MONTHS",
     });
 
-    // Чек-лист свадьбы A виден по weddingId A
     expect(await coupleChecklist(a.weddingId)).toHaveLength(1);
-    // Чек-лист свадьбы B пуст
     expect(await coupleChecklist(b.weddingId)).toHaveLength(0);
   });
 });

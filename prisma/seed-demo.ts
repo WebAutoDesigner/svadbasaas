@@ -1,22 +1,26 @@
 /**
- * Dev-сид: демо-агентство с владельцем и несколькими свадьбами —
- * чтобы прокликивать/снимать интерфейс агентства локально.
+ * Dev-сид: демо-агентство с владельцем и несколькими свадьбами + доступ пары.
+ * Вход теперь по телефону+паролю (без email/смс).
  *   npx tsx prisma/seed-demo.ts
- * Вход: demo@svadba.local / demo12345
+ * Агентство:  +7 999 000-00-01 / demo12345
+ * Пара:       +7 999 000-00-02 / para12345  (свадьба Анна & Дмитрий)
  */
 import "dotenv/config";
 import { db } from "../lib/db";
 import { createAgencyWithOwner } from "../lib/agency/create";
+import { upsertCoupleAccess } from "../lib/couple/auth";
 
-const OWNER_EMAIL = "demo@svadba.local";
+const OWNER_PHONE = "79990000001";
 const OWNER_PASSWORD = "demo12345";
+const COUPLE_PHONE = "79990000002";
+const COUPLE_PASSWORD = "para12345";
 
 async function main(): Promise<void> {
   let agencyId: string;
 
   const res = await createAgencyWithOwner({
     agencyName: "Свадебное агентство «Вечность»",
-    ownerEmail: OWNER_EMAIL,
+    ownerPhone: OWNER_PHONE,
     ownerName: "Никита",
     ownerPassword: OWNER_PASSWORD,
   });
@@ -24,7 +28,7 @@ async function main(): Promise<void> {
   if (res.ok) {
     agencyId = res.data.agencyId;
   } else {
-    const user = await db.user.findUnique({ where: { email: OWNER_EMAIL } });
+    const user = await db.user.findUnique({ where: { phone: OWNER_PHONE } });
     if (!user) throw new Error("Owner exists but user not found");
     const member = await db.agencyMember.findFirst({
       where: { userId: user.id },
@@ -45,8 +49,9 @@ async function main(): Promise<void> {
       ["Екатерина", "Павел", 32, "Загородный клуб «Сосны»"],
       ["Ольга", "Сергей", 54, "Ресторан «Прага»"],
     ];
+    let firstWeddingId: string | null = null;
     for (const [brideName, groomName, days, location] of seed) {
-      await db.wedding.create({
+      const w = await db.wedding.create({
         data: {
           agencyId,
           brideName,
@@ -56,13 +61,22 @@ async function main(): Promise<void> {
           status: "PLANNING",
         },
       });
+      if (!firstWeddingId) firstWeddingId = w.id;
+    }
+    if (firstWeddingId) {
+      await upsertCoupleAccess(
+        firstWeddingId,
+        COUPLE_PHONE,
+        COUPLE_PASSWORD,
+        "Анна и Дмитрий",
+      );
     }
   }
 
   console.log("DEMO READY");
-  console.log(`  agencyId: ${agencyId}`);
-  console.log(`  email:    ${OWNER_EMAIL}`);
-  console.log(`  password: ${OWNER_PASSWORD}`);
+  console.log(`  agencyId:    ${agencyId}`);
+  console.log(`  агентство:   ${OWNER_PHONE} / ${OWNER_PASSWORD}`);
+  console.log(`  пара:        ${COUPLE_PHONE} / ${COUPLE_PASSWORD}`);
 }
 
 main()

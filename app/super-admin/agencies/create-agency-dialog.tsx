@@ -52,15 +52,15 @@ export function CreateAgencyDialog() {
                 disabled={isPending}
               />
               <Field
-                name="ownerEmail"
-                label="Email владельца"
-                type="email"
-                error={state.fieldErrors?.ownerEmail}
+                name="ownerPhone"
+                label="Телефон владельца"
+                type="tel"
+                error={state.fieldErrors?.ownerPhone}
                 disabled={isPending}
               />
               <Field
                 name="ownerPassword"
-                label="Начальный пароль (≥10 симв)"
+                label="Начальный пароль (≥8 симв)"
                 type="text"
                 error={state.fieldErrors?.ownerPassword}
                 disabled={isPending}

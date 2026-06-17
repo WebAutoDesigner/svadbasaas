@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { loginSchema } from "@/lib/validators/auth";
+import { superAdminLoginSchema } from "@/lib/validators/auth";
 import { loginSuperAdmin } from "@/lib/super-admin/auth";
 import { setSuperAdminCookie } from "@/lib/super-admin/session";
 import { logAction } from "@/lib/audit";
@@ -31,7 +31,7 @@ export async function loginSuperAdminAction(
     };
   }
 
-  const parsed = loginSchema.safeParse({
+  const parsed = superAdminLoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });

@@ -1,85 +1,50 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  requestCodeAction,
-  verifyCodeAction,
-  type RequestState,
-  type VerifyState,
-} from "./actions";
+import { loginCoupleAction, type LoginState } from "./actions";
 
 export function LoginFlow() {
-  const [email, setEmail] = useState("");
-  const [reqState, reqAction, reqPending] = useActionState(
-    requestCodeAction,
-    {} as RequestState,
-  );
-
-  if (!reqState.sent) {
-    return (
-      <form action={reqAction} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Ваш email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={reqPending}
-          />
-        </div>
-        {reqState.error ? (
-          <p className="text-sm text-destructive">{reqState.error}</p>
-        ) : null}
-        <Button type="submit" className="w-full" disabled={reqPending}>
-          {reqPending ? "Отправляем…" : "Получить код"}
-        </Button>
-      </form>
-    );
-  }
-
-  return <CodeStep email={email} devCode={reqState.devCode} />;
-}
-
-function CodeStep({ email, devCode }: { email: string; devCode?: string }) {
-  const action = verifyCodeAction.bind(null, email);
   const [state, formAction, pending] = useActionState(
-    action,
-    {} as VerifyState,
+    loginCoupleAction,
+    {} as LoginState,
   );
 
   return (
     <form action={formAction} className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Мы отправили код на <b>{email}</b>. Введите его ниже.
-      </p>
-      {devCode ? (
-        <p className="text-sm bg-muted rounded p-2">
-          DEV: код входа <b>{devCode}</b>
-        </p>
-      ) : null}
       <div className="space-y-2">
-        <Label htmlFor="code">Код из письма</Label>
+        <Label htmlFor="phone">Телефон</Label>
         <Input
-          id="code"
-          name="code"
-          inputMode="numeric"
-          pattern="\d{6}"
-          maxLength={6}
+          id="phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          placeholder="+7 999 123-45-67"
+          autoComplete="tel"
+          required
+          disabled={pending}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Пароль</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
           required
           disabled={pending}
         />
       </div>
       {state.error ? (
-        <p className="text-sm text-destructive">{state.error}</p>
+        <p className="text-sm text-destructive" role="alert">
+          {state.error}
+        </p>
       ) : null}
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Проверяем…" : "Войти"}
+      <Button type="submit" variant="gold" className="w-full" disabled={pending}>
+        {pending ? "Входим…" : "Войти"}
       </Button>
     </form>
   );

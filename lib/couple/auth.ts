@@ -1,24 +1,34 @@
 import bcrypt from "bcryptjs";
-import { randomInt, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { err, ok, type Result } from "@/lib/result";
 
-const BCRYPT_COST = 12; // по политике AGENTS.md (≥12), как в остальных хэшах
-const CODE_TTL_MS = 15 * 60 * 1000; // 15 минут
+const BCRYPT_COST = 12; // политика AGENTS.md (≥12)
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 дней
 const MAX_TRIES = 5;
 const LOCK_MS = 30 * 60 * 1000; // 30 минут
 
-/** Агентство приглашает пару: создаёт/обновляет доступ к свадьбе */
+/**
+ * Агентство приглашает пару: задаёт телефон + пароль доступа к свадьбе.
+ * Повторный вызов перезаписывает (сброс пароля парой через агентство).
+ */
 export async function upsertCoupleAccess(
   weddingId: string,
-  email: string,
+  phone: string,
+  password: string,
   name: string | null,
 ): Promise<void> {
+  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
   await db.coupleAccess.upsert({
     where: { weddingId },
-    create: { weddingId, email: email.toLowerCase(), name },
-    update: { email: email.toLowerCase(), name },
+    create: { weddingId, phone, passwordHash, name },
+    update: {
+      phone,
+      passwordHash,
+      name,
+      failedTries: 0,
+      lockedUntil: null,
+    },
   });
 }
 
@@ -26,59 +36,23 @@ export async function getCoupleAccessForWedding(weddingId: string) {
   return db.coupleAccess.findUnique({ where: { weddingId } });
 }
 
-/**
- * Запрос кода входа. Находит доступ по email, генерит 6-значный код,
- * хэширует, ставит TTL. Возвращает code только в dev (для показа), иначе null.
- */
-export async function requestLoginCode(
-  email: string,
-): Promise<Result<{ code: string }, "NO_ACCESS">> {
-  const access = await db.coupleAccess.findFirst({
-    where: { email: email.toLowerCase() },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!access) return err("NO_ACCESS");
+export type VerifyError = "INVALID" | "LOCKED";
 
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-  const codeHash = await bcrypt.hash(code, BCRYPT_COST);
-
-  await db.coupleAccess.update({
-    where: { id: access.id },
-    data: {
-      codeHash,
-      codeExpiresAt: new Date(Date.now() + CODE_TTL_MS),
-      failedTries: 0,
-      lockedUntil: null,
-    },
-  });
-
-  return ok({ code });
-}
-
-export type VerifyError = "NO_ACCESS" | "LOCKED" | "EXPIRED" | "WRONG_CODE";
-
-/** Проверяет код, при успехе создаёт сессию и возвращает её id + weddingId */
-export async function verifyLoginCode(
-  email: string,
-  code: string,
+/** Вход пары по телефону+паролю. При успехе создаёт сессию. */
+export async function verifyCouplePassword(
+  phone: string,
+  password: string,
 ): Promise<
   Result<{ sessionId: string; expiresAt: Date; weddingId: string }, VerifyError>
 > {
-  const access = await db.coupleAccess.findFirst({
-    where: { email: email.toLowerCase() },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!access || !access.codeHash || !access.codeExpiresAt) {
-    return err("NO_ACCESS");
-  }
+  const access = await db.coupleAccess.findUnique({ where: { phone } });
+  // Не раскрываем, существует ли доступ: общий ответ INVALID.
+  if (!access || !access.passwordHash) return err("INVALID");
   if (access.lockedUntil && access.lockedUntil > new Date()) {
     return err("LOCKED");
   }
-  if (access.codeExpiresAt < new Date()) {
-    return err("EXPIRED");
-  }
 
-  const valid = await bcrypt.compare(code, access.codeHash);
+  const valid = await bcrypt.compare(password, access.passwordHash);
   if (!valid) {
     const tries = access.failedTries + 1;
     await db.coupleAccess.update({
@@ -89,22 +63,15 @@ export async function verifyLoginCode(
           tries >= MAX_TRIES ? new Date(Date.now() + LOCK_MS) : null,
       },
     });
-    return err("WRONG_CODE");
+    return err("INVALID");
   }
 
-  // Успех: гасим код, создаём сессию
   const sessionId = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   await db.$transaction([
     db.coupleAccess.update({
       where: { id: access.id },
-      data: {
-        codeHash: null,
-        codeExpiresAt: null,
-        failedTries: 0,
-        lockedUntil: null,
-        lastLoginAt: new Date(),
-      },
+      data: { failedTries: 0, lockedUntil: null, lastLoginAt: new Date() },
     }),
     db.coupleSession.create({
       data: { id: sessionId, coupleAccessId: access.id, expiresAt },
@@ -114,7 +81,7 @@ export async function verifyLoginCode(
   return ok({ sessionId, expiresAt, weddingId: access.weddingId });
 }
 
-export type CoupleSessionInfo = { weddingId: string; email: string };
+export type CoupleSessionInfo = { weddingId: string; phone: string };
 
 export async function getCoupleSession(
   sessionId: string | undefined,
@@ -131,7 +98,7 @@ export async function getCoupleSession(
   }
   return {
     weddingId: session.coupleAccess.weddingId,
-    email: session.coupleAccess.email,
+    phone: session.coupleAccess.phone ?? "",
   };
 }
 

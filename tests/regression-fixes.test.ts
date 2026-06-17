@@ -52,14 +52,14 @@ describe("regression: AuditLog.userId is not an enforced FK to User", () => {
 describe("regression: email is normalized to lowercase in validators", () => {
   // Баг: сторона агентства хранила email как есть, Better-Auth-логин (lowercase)
   // не находил юзера при заглавных буквах. emailSchema теперь trim+lowercase.
-  it("createAgencySchema lowercases ownerEmail", () => {
+  it("createAgencySchema нормализует телефон владельца к 7XXXXXXXXXX", () => {
     const parsed = createAgencySchema.parse({
       agencyName: "Тест",
-      ownerEmail: "  Owner@TestAgency.RU ",
+      ownerPhone: "+7 (999) 123-45-67",
       ownerName: "Анна",
       ownerPassword: "password-123-456",
     });
-    expect(parsed.ownerEmail).toBe("owner@testagency.ru");
+    expect(parsed.ownerPhone).toBe("79991234567");
   });
 
   it("addMemberSchema lowercases email", () => {
@@ -82,7 +82,7 @@ describe("regression: removing the only membership frees the email for re-add", 
   it("re-adding a removed member with the same email succeeds", async () => {
     const agency = await createAgencyWithOwner({
       agencyName: `${PREFIX}readd`,
-      ownerEmail: `${PREFIX}owner@example.com`,
+      ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
       ownerName: "Owner",
       ownerPassword: "password-123-456",
     });

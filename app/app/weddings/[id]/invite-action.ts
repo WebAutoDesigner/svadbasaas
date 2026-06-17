@@ -5,10 +5,12 @@ import { revalidatePath } from "next/cache";
 import { requireAgencyContext } from "@/lib/tenant";
 import { assertWedding } from "@/lib/wedding/guard";
 import { upsertCoupleAccess } from "@/lib/couple/auth";
+import { phoneSchema, passwordSchema } from "@/lib/validators/auth";
 import { logAction } from "@/lib/audit";
 
 const schema = z.object({
-  email: z.string().email().max(255),
+  phone: phoneSchema,
+  password: passwordSchema,
   name: z.string().max(200).optional().or(z.literal("")),
 });
 
@@ -21,19 +23,36 @@ export async function inviteCoupleAction(
     return { error: "Свадьба не найдена" };
   }
   const parsed = schema.safeParse({
-    email: formData.get("email"),
+    phone: formData.get("phone"),
+    password: formData.get("password"),
     name: formData.get("name"),
   });
-  if (!parsed.success) return { error: "Некорректный email" };
+  if (!parsed.success) {
+    return {
+      error:
+        parsed.error.issues[0]?.message ?? "Проверьте телефон и пароль (≥8 симв)",
+    };
+  }
 
-  await upsertCoupleAccess(weddingId, parsed.data.email, parsed.data.name || null);
+  try {
+    await upsertCoupleAccess(
+      weddingId,
+      parsed.data.phone,
+      parsed.data.password,
+      parsed.data.name || null,
+    );
+  } catch {
+    // Телефон уже занят другой свадьбой (phone @unique)
+    return { error: "Этот телефон уже привязан к другой паре" };
+  }
+
   await logAction({
     action: "wedding.couple_invite",
     agencyId: ctx.agencyId,
     userId: ctx.userId,
     targetType: "wedding",
     targetId: weddingId,
-    payload: { email: parsed.data.email },
+    payload: { phone: parsed.data.phone },
   });
   revalidatePath(`/app/weddings/${weddingId}`);
   return {};

@@ -41,13 +41,13 @@ describe("Postgres RLS enforces tenant isolation even on unscoped queries", () =
   beforeEach(async () => {
     const a = await createAgencyWithOwner({
       agencyName: `${PREFIX}A`,
-      ownerEmail: `${PREFIX}a@example.com`,
+      ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
       ownerName: "A",
       ownerPassword: "password-123-456",
     });
     const b = await createAgencyWithOwner({
       agencyName: `${PREFIX}B`,
-      ownerEmail: `${PREFIX}b@example.com`,
+      ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
       ownerName: "B",
       ownerPassword: "password-123-456",
     });

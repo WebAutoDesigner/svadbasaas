@@ -35,7 +35,7 @@ async function setup(
 ): Promise<{ agencyId: string; weddingId: string }> {
   const a = await createAgencyWithOwner({
     agencyName: `${PREFIX}${suffix}`,
-    ownerEmail: `${PREFIX}${suffix}@example.com`,
+    ownerPhone: `7${Math.floor(1e9 + Math.random() * 8.9e9)}`,
     ownerName: "Owner",
     ownerPassword: "password-123-456",
   });

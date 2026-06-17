@@ -41,7 +41,7 @@ export default function LandingPage() {
           <EntryCard
             eyebrow="Для молодожёнов"
             title="Кабинет пары"
-            description="Ваша свадьба, гости, тайминг и запросы — по коду от агентства."
+            description="Ваша свадьба, гости, тайминг и запросы — вход по телефону и паролю от агентства."
             href="/couple/login"
             cta="Войти как пара"
             variant="outline"

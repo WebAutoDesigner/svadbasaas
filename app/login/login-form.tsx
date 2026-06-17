@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { normalizePhone, phoneToLoginEmail } from "@/lib/phone";
 
 export function LoginForm() {
   const router = useRouter();
@@ -17,18 +18,23 @@ export function LoginForm() {
     event.preventDefault();
     setError(null);
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    const phone = normalizePhone(String(form.get("phone") ?? ""));
     const password = String(form.get("password") ?? "");
+
+    if (!phone) {
+      setError("Введите номер телефона");
+      return;
+    }
 
     setPending(true);
     const result = await authClient.signIn.email({
-      email,
+      email: phoneToLoginEmail(phone),
       password,
     });
     setPending(false);
 
     if (result.error) {
-      setError("Неверный email или пароль");
+      setError("Неверный телефон или пароль");
       return;
     }
 
@@ -40,12 +46,14 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="phone">Телефон</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
+          id="phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          placeholder="+7 999 123-45-67"
+          autoComplete="tel"
           required
           disabled={pending}
         />

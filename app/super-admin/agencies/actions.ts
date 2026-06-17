@@ -10,7 +10,7 @@ export type CreateAgencyFormState = {
   ok?: boolean;
   error?: string;
   fieldErrors?: Partial<
-    Record<"agencyName" | "ownerEmail" | "ownerName" | "ownerPassword", string>
+    Record<"agencyName" | "ownerPhone" | "ownerName" | "ownerPassword", string>
   >;
 };
 
@@ -22,7 +22,7 @@ export async function createAgencyAction(
 
   const parsed = createAgencySchema.safeParse({
     agencyName: formData.get("agencyName"),
-    ownerEmail: formData.get("ownerEmail"),
+    ownerPhone: formData.get("ownerPhone"),
     ownerName: formData.get("ownerName"),
     ownerPassword: formData.get("ownerPassword"),
   });
@@ -33,7 +33,7 @@ export async function createAgencyAction(
       const key = issue.path[0];
       if (
         key === "agencyName" ||
-        key === "ownerEmail" ||
+        key === "ownerPhone" ||
         key === "ownerName" ||
         key === "ownerPassword"
       ) {
@@ -45,8 +45,8 @@ export async function createAgencyAction(
 
   const result = await createAgencyWithOwner(parsed.data);
   if (!result.ok) {
-    if (result.error === "EMAIL_TAKEN") {
-      return { error: "Пользователь с таким email уже существует" };
+    if (result.error === "PHONE_TAKEN") {
+      return { error: "Пользователь с таким телефоном уже существует" };
     }
     return { error: "Не удалось создать агентство" };
   }
@@ -59,7 +59,7 @@ export async function createAgencyAction(
     targetId: result.data.agencyId,
     payload: {
       agencyName: parsed.data.agencyName,
-      ownerEmail: parsed.data.ownerEmail,
+      ownerPhone: parsed.data.ownerPhone,
     },
   });
 

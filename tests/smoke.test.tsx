@@ -6,7 +6,7 @@ describe("LandingPage", () => {
   it("renders headline", () => {
     render(<LandingPage />);
     expect(
-      screen.getByRole("heading", { name: /svadba plus/i })
+      screen.getByRole("heading", { name: /свадебных агентств/i })
     ).toBeInTheDocument();
   });
 });
