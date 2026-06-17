@@ -11,7 +11,9 @@ export async function setSuperAdminCookie(
   const store = await cookies();
   store.set(COOKIE_NAME, sessionId, {
     httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
+    // Secure только при реальном HTTPS (по протоколу BETTER_AUTH_URL).
+    // На голом HTTP-IP Secure-куку браузер шлёт нестабильно → ломался вход.
+    secure: (process.env["BETTER_AUTH_URL"] ?? "").startsWith("https"),
     sameSite: "lax",
     expires: expiresAt,
     path: "/",

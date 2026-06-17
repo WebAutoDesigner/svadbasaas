@@ -11,7 +11,8 @@ export async function setCoupleCookie(
   const store = await cookies();
   store.set(COOKIE_NAME, sessionId, {
     httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
+    // Secure только при реальном HTTPS (см. super-admin/session.ts).
+    secure: (process.env["BETTER_AUTH_URL"] ?? "").startsWith("https"),
     sameSite: "lax",
     expires: expiresAt,
     path: "/",
